@@ -1,13 +1,11 @@
-package com.ekeis.rema;
+package com.ekeis.rema.gui;
 
 import sun.swing.UIAction;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.io.IOException;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 /**
@@ -17,44 +15,40 @@ public class MainForm {
     private static final Logger log = Logger.getLogger(MainForm.class.getName());
 
     private JPanel contentPanel;
-    private JTextArea codeArea;
+    private JEditorPane codeArea;
     private JPanel registerOverview;
     private JTextArea outputArea;
     private JMenuBar jMenuBar;
+    private JButton buttonRun;
+    private JButton buttonStep;
+    private JButton buttonReset;
     private static ResourceBundle resourceBundle = ResourceBundle.getBundle("com/ekeis/rema/properties/MainFormBundle");
 
     private void createUIComponents() {
-        log.fine("create");
         createJMenuBar();
     }
 
     private void createJMenuBar() {
-        log.finest("menuBar");
         jMenuBar = new JMenuBar();
 
-        JMenu fileMenu = new JMenu(new UIAction(resourceBundle.getString("fileMenu")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                log.finest("file menu");
-            }
-        });
+        JMenu fileMenu = new JMenu(resourceBundle.getString("menu.file"));
         jMenuBar.add(fileMenu);
-
-        JMenu settingsMenu = new JMenu(new UIAction(resourceBundle.getString("settingsMenu")) {
+        fileMenu.add(new UIAction(resourceBundle.getString("menu.file.exit")) {
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                System.exit(0);
             }
         });
     }
 
 
     public JFrame getFrame() {
-        log.severe("Test");
-        JFrame frame = new JFrame("MainForm");
+        log.fine("Building frame");
+        JFrame frame = new JFrame(resourceBundle.getString("app.name"));
         frame.setContentPane(contentPanel);
         frame.setJMenuBar(jMenuBar);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setPreferredSize(new Dimension(500, 600));
         return frame;
     }
 }

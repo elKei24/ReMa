@@ -1,7 +1,8 @@
 package com.ekeis.rema;
 
+import com.ekeis.rema.gui.MainForm;
+
 import javax.swing.*;
-import java.io.IOException;
 import java.util.ResourceBundle;
 import java.util.logging.LogManager;
 
