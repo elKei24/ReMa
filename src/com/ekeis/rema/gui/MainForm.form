@@ -16,6 +16,8 @@
         </constraints>
         <properties>
           <orientation value="0"/>
+          <requestFocusEnabled value="true"/>
+          <resizeWeight value="0.85"/>
         </properties>
         <border type="none"/>
         <children>
@@ -24,7 +26,8 @@
               <splitpane position="left"/>
             </constraints>
             <properties>
-              <enabled value="false"/>
+              <enabled value="true"/>
+              <resizeWeight value="0.75"/>
             </properties>
             <border type="none"/>
             <children>
@@ -36,83 +39,76 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <scrollpane id="4eef7">
+                  <grid id="1f715" layout-manager="GridLayoutManager" row-count="1" column-count="7" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="-1">
+                    <margin top="5" left="5" bottom="5" right="5"/>
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties/>
-                    <border type="empty"/>
+                    <border type="none"/>
                     <children>
-                      <grid id="1f715" layout-manager="GridLayoutManager" row-count="1" column-count="7" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="-1">
-                        <margin top="5" left="5" bottom="5" right="5"/>
-                        <constraints/>
-                        <properties/>
-                        <border type="none"/>
-                        <children>
-                          <hspacer id="9f456">
-                            <constraints>
-                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                          </hspacer>
-                          <component id="f5269" class="javax.swing.JButton" binding="buttonRun">
-                            <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties>
-                              <background color="-8716544"/>
-                              <enabled value="true"/>
-                              <foreground color="-12698050"/>
-                              <text resource-bundle="com/ekeis/rema/properties/MainFormBundle" key="action.run"/>
-                              <toolTipText resource-bundle="com/ekeis/rema/properties/MainFormBundle" key="action.run.tooltip"/>
-                            </properties>
-                          </component>
-                          <hspacer id="504e8">
-                            <constraints>
-                              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                          </hspacer>
-                          <component id="2904c" class="javax.swing.JButton" binding="buttonStep">
-                            <constraints>
-                              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties>
-                              <background color="-131263"/>
-                              <foreground color="-12698050"/>
-                              <text resource-bundle="com/ekeis/rema/properties/MainFormBundle" key="action.step"/>
-                              <toolTipText resource-bundle="com/ekeis/rema/properties/MainFormBundle" key="action.step.tooltip"/>
-                            </properties>
-                          </component>
-                          <component id="67d16" class="javax.swing.JButton" binding="buttonReset">
-                            <constraints>
-                              <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties>
-                              <background color="-50396"/>
-                              <foreground color="-12698050"/>
-                              <text resource-bundle="com/ekeis/rema/properties/MainFormBundle" key="action.reset"/>
-                              <toolTipText resource-bundle="com/ekeis/rema/properties/MainFormBundle" key="action.reset.tooltip"/>
-                            </properties>
-                          </component>
-                          <hspacer id="5c200">
-                            <constraints>
-                              <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                          </hspacer>
-                          <hspacer id="58b3b">
-                            <constraints>
-                              <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                          </hspacer>
-                        </children>
-                      </grid>
+                      <hspacer id="9f456">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </hspacer>
+                      <component id="f5269" class="javax.swing.JButton" binding="buttonRun">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <background color="-8716544"/>
+                          <enabled value="true"/>
+                          <foreground color="-12698050"/>
+                          <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="action.run"/>
+                          <toolTipText resource-bundle="com/ekeis/rema/properties/GUIBundle" key="action.run.tooltip"/>
+                        </properties>
+                      </component>
+                      <hspacer id="504e8">
+                        <constraints>
+                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </hspacer>
+                      <component id="2904c" class="javax.swing.JButton" binding="buttonStep">
+                        <constraints>
+                          <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <background color="-131263"/>
+                          <foreground color="-12698050"/>
+                          <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="action.step"/>
+                          <toolTipText resource-bundle="com/ekeis/rema/properties/GUIBundle" key="action.step.tooltip"/>
+                        </properties>
+                      </component>
+                      <component id="67d16" class="javax.swing.JButton" binding="buttonReset">
+                        <constraints>
+                          <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <background color="-50396"/>
+                          <foreground color="-12698050"/>
+                          <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="action.reset"/>
+                          <toolTipText resource-bundle="com/ekeis/rema/properties/GUIBundle" key="action.reset.tooltip"/>
+                        </properties>
+                      </component>
+                      <hspacer id="5c200">
+                        <constraints>
+                          <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </hspacer>
+                      <hspacer id="58b3b">
+                        <constraints>
+                          <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </hspacer>
                     </children>
-                  </scrollpane>
+                  </grid>
                   <scrollpane id="b7dc6">
                     <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties/>
-                    <border type="none"/>
+                    <border type="empty"/>
                     <children>
                       <grid id="12700" binding="registerOverview" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                         <margin top="0" left="0" bottom="0" right="0"/>
@@ -130,13 +126,13 @@
                   <splitpane position="left"/>
                 </constraints>
                 <properties/>
-                <border type="none"/>
+                <border type="empty"/>
                 <children>
                   <component id="6f173" class="javax.swing.JEditorPane" binding="codeArea">
                     <constraints/>
                     <properties>
-                      <text value="1: END"/>
-                      <toolTipText resource-bundle="com/ekeis/rema/properties/MainFormBundle" key="code.tooltip"/>
+                      <text resource-bundle="com/ekeis/rema/properties/NoTranslation" key="code.default"/>
+                      <toolTipText resource-bundle="com/ekeis/rema/properties/GUIBundle" key="code.tooltip"/>
                     </properties>
                   </component>
                 </children>
