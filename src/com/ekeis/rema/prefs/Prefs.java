@@ -10,10 +10,11 @@ import java.util.prefs.Preferences;
 public class Prefs {
     private static final Logger log = Logger.getLogger(Prefs.class.getName());
 
-    private static final String KEY_PREFIX = "settings.";
-    private static final String KEY_REGISTERS = KEY_PREFIX + "registers";
-    private static final String KEY_REGISTER_MAX = KEY_PREFIX + "registerMax";
-    private static final String KEY_REGISTER_MIN = KEY_PREFIX + "registerMin";
+    private static final String PREF_SETTINGS = "settings.";
+    private static final String KEY_REGISTERS = PREF_SETTINGS + "registers";
+    private static final String KEY_REGISTER_MAX = PREF_SETTINGS + "registerMax";
+    private static final String KEY_REGISTER_MIN = PREF_SETTINGS + "registerMin";
+    private static final String KEY_IGNORE_AUTOLINES = "ignoreAutolinesWarning";
 
     private static final Prefs instance = new Prefs();
     public static Prefs getInstance() {return instance;}
@@ -59,5 +60,11 @@ public class Prefs {
     public void setRegisterMin(long val) {
         prefs.putLong(KEY_REGISTER_MIN, val);
         sync();
+    }
+    public boolean getIgnoreAutolinesWarning() {
+        return prefs.getBoolean(KEY_IGNORE_AUTOLINES, false);
+    }
+    public void setIgnoreAutolinesWarning(boolean ignore) {
+        prefs.putBoolean(KEY_IGNORE_AUTOLINES, ignore);
     }
 }

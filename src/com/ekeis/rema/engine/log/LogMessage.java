@@ -6,4 +6,5 @@ package com.ekeis.rema.engine.log;
 public interface LogMessage {
     String getMessage();
     String getCategory();
+    int getLine();
 }

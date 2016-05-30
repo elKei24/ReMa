@@ -50,4 +50,9 @@ public class Machine {
     public Register getCounter() {
         return counter;
     }
+
+    public int getCurrentCommand() {
+        //TODO implement
+        return 0;
+    }
 }

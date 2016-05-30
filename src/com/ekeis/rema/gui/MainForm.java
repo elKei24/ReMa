@@ -1,6 +1,7 @@
 package com.ekeis.rema.gui;
 
 import com.ekeis.rema.engine.Machine;
+import com.ekeis.rema.prefs.Prefs;
 import sun.swing.UIAction;
 
 import javax.swing.*;
@@ -61,6 +62,19 @@ public class MainForm {
                 step();
             }
         });
+
+        codeArea.setComponentPopupMenu(createEditorPopup());
+    }
+
+    private JPopupMenu createEditorPopup() {
+        JPopupMenu menu = new JPopupMenu(res.getString("menu.code"));
+        menu.add(new UIAction(res.getString("menu.code.update_line_numbers")) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                autolines();
+            }
+        });
+        return menu;
     }
 
     private void createFileChooser() {
@@ -131,6 +145,15 @@ public class MainForm {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.exit(0);
+            }
+        });
+
+        JMenu codeMenu = new JMenu(res.getString("menu.code"));
+        jMenuBar.add(codeMenu);
+        codeMenu.add(new UIAction(res.getString("menu.code.update_line_numbers")) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                autolines();
             }
         });
 
@@ -220,6 +243,28 @@ public class MainForm {
         if (JFileChooser.APPROVE_OPTION == fileChooser.showSaveDialog(contentPanel)) {
             save();
             menuFileSave.setEnabled(true);
+        }
+    }
+
+    private void autolines() {
+        boolean sure = Prefs.getInstance().getIgnoreAutolinesWarning();
+        if (!sure) {
+            JLabel label = new JLabel(String.format("<html><div style=\"width:%dpx;\">%s</div><html>", 300,
+                    res.getString("code.autolines.warning.text")));
+            JCheckBox checkbox = new JCheckBox(res.getString("dont_show_again"), false);
+            checkbox.setMargin(new Insets(8, 0, 0, 0));
+            JPanel msgPanel = new JPanel(new BorderLayout());
+            msgPanel.add(label, BorderLayout.NORTH);
+            msgPanel.add(checkbox, BorderLayout.SOUTH);
+            if (JOptionPane.showConfirmDialog(contentPanel, msgPanel,
+                    res.getString("code.autolines.warning.title"), JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
+                sure = true;
+                Prefs.getInstance().setIgnoreAutolinesWarning(checkbox.isSelected());
+            }
+        }
+        if (sure) {
+            codeArea.setText(CodeHelper.updateLineNumbers(codeArea.getText()));
         }
     }
 

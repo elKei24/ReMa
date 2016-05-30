@@ -1,13 +1,11 @@
 package com.ekeis.rema.gui;
 
-import com.ekeis.rema.engine.commands.AvailableCommand;
-import com.ekeis.rema.engine.commands.descriptions.CommandDescription;
-
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
@@ -24,11 +22,32 @@ public class CommandsDialog extends JDialog {
     private JTextArea descriptionPane;
     private JLabel titlePane;
 
+    private static final String[] commands = new String[] {
+            "cmd.storage.load",
+            "cmd.storage.dload",
+            "cmd.storage.store",
+            "cmd.math.add",
+            "cmd.math.sub",
+            "cmd.math.mult",
+            "cmd.math.div",
+            "cmd.jump.jge",
+            "cmd.jump.jump",
+            "cmd.jump.jgt",
+            "cmd.jump.jle",
+            "cmd.jump.jlt",
+            "cmd.jump.jeq",
+            "cmd.jump.jne",
+            "cmd.end",
+            "cmd.debug.pause",
+            "cmd.debug.log"};
+
     public CommandsDialog() {
+        super((Dialog) null);
         setContentPane(contentPane);
         setModal(false);
         getRootPane().setDefaultButton(buttonOK);
         setTitle(guiRes.getString("commands.title"));
+        //TODO setShowInTaskbar!
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -54,11 +73,10 @@ public class CommandsDialog extends JDialog {
 
     private void createUIComponents() {
         //init tree
-        List<AvailableCommand> commands = Arrays.asList(AvailableCommand.values());
         CommandDescription desc;
-        HashMap<String, DefaultMutableTreeNode> map = new HashMap<>(commands.size());
-        for (AvailableCommand command : commands) {
-            desc = command.getDescription();
+        HashMap<String, DefaultMutableTreeNode> map = new HashMap<>(commands.length);
+        for (String command : Arrays.asList(commands)) {
+            desc = new CommandDescription(command);
             addCommand(map, desc);
         }
 
@@ -117,4 +135,36 @@ public class CommandsDialog extends JDialog {
     private void onOK() {
         dispose();
     }
+
+    /**
+     * @author Elias Keis (30.05.2016)
+     */
+    public static final class CommandDescription {
+        private static final Logger log = Logger.getLogger(CommandDescription.class.getName());
+        private static final ResourceBundle res = ResourceBundle.getBundle("com/ekeis/rema/properties/commandDescriptions");
+
+        private String id;
+
+        public CommandDescription(String id) {
+            this.id = id;
+        }
+        public String getTitle() {
+            return res.getString(id + ".title");
+        }
+        public String getDescription() {
+            return res.getString(id + ".text");
+        }
+        public String getId() {
+            return id;
+        }
+        public String getKey() {
+            return res.getString(id);
+        }
+
+        @Override
+        public String toString() {
+            return getKey();
+        }
+    }
+
 }
