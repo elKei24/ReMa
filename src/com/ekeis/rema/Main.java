@@ -11,7 +11,6 @@ import java.util.logging.Logger;
  * @author Elias Keis (29.05.2016)
  */
 public class Main {
-    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com/ekeis/rema/properties/LogMessages");
 
     public static void main(String[] args) {
         //configure logging
@@ -19,13 +18,13 @@ public class Main {
         if(logFile == null){
             try {
                 LogManager.getLogManager().readConfiguration(MainForm.class.getClassLoader().getResourceAsStream("com/ekeis/rema/properties/logging.properties"));
-                System.out.println(resourceBundle.getString("log.properties.own"));
+                System.out.println("Using own logging properties");
             } catch (Exception e) {
                 e.printStackTrace();
-                System.out.println(resourceBundle.getString("log.properties.default"));
+                System.out.println("Using default logging properties");
             }
         } else {
-            System.out.println(resourceBundle.getString("log.properties.external"));
+            System.out.println("Using external logging properties");
         }
         Logger log = Logger.getLogger(Main.class.getName());
 
@@ -43,7 +42,7 @@ public class Main {
         }
 
         //show main frame
-        JFrame frame = (new MainForm()).getFrame();
+        JFrame frame = (new MainForm()).createFrame();
         frame.pack();
         frame.setVisible(true);
     }

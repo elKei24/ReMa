@@ -6,7 +6,6 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 
 public class SettingsDialog extends JDialog {
     private static final Logger log = Logger.getLogger(SettingsDialog.class.getName());
@@ -15,6 +14,13 @@ public class SettingsDialog extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
     private JSpinner registersSpinner;
+
+    private Result result = Result.NONE;
+    public enum Result {
+        NONE, OK, CANCEL
+    }
+
+    //TODO can not yet edit register min/max values
 
     public SettingsDialog() {
         setTitle(res.getString("settings.title"));
@@ -52,23 +58,25 @@ public class SettingsDialog extends JDialog {
     }
 
     private void onCancel() {
+        result = Result.CANCEL;
         dispose();
     }
 
     private void onOK() {
         store();
+        result = Result.OK;
         dispose();
     }
 
     private void load() {
-        //TODO implement
         registersSpinner.setModel(new SpinnerNumberModel(Prefs.getInstance().getNumberRegisters(), 3, 200, 1));
-        log.severe("Not yet implemented");
     }
 
     private void store() {
-        //TODO implement
         Prefs.getInstance().setNumberRegisters((int) registersSpinner.getValue());
-        log.severe("Not yet implemented");
+    }
+
+    public Result getResult() {
+        return result;
     }
 }

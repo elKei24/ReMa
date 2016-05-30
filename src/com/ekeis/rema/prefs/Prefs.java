@@ -1,7 +1,5 @@
 package com.ekeis.rema.prefs;
 
-import java.util.ResourceBundle;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -14,6 +12,8 @@ public class Prefs {
 
     private static final String KEY_PREFIX = "settings.";
     private static final String KEY_REGISTERS = KEY_PREFIX + "registers";
+    private static final String KEY_REGISTER_MAX = KEY_PREFIX + "registerMax";
+    private static final String KEY_REGISTER_MIN = KEY_PREFIX + "registerMin";
 
     private static final Prefs instance = new Prefs();
     public static Prefs getInstance() {return instance;}
@@ -44,6 +44,20 @@ public class Prefs {
     }
     public void setNumberRegisters(int val) {
         prefs.putInt(KEY_REGISTERS, val);
+        sync();
+    }
+    public long getRegisterMax() {
+        return prefs.getLong(KEY_REGISTER_MAX, Byte.MAX_VALUE);
+    }
+    public void setRegisterMax(long val) {
+        prefs.putLong(KEY_REGISTER_MAX, val);
+        sync();
+    }
+    public long getRegisterMin() {
+        return prefs.getLong(KEY_REGISTER_MIN, Byte.MIN_VALUE);
+    }
+    public void setRegisterMin(long val) {
+        prefs.putLong(KEY_REGISTER_MIN, val);
         sync();
     }
 }

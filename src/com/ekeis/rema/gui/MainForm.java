@@ -1,11 +1,13 @@
 package com.ekeis.rema.gui;
 
+import com.ekeis.rema.engine.Machine;
 import sun.swing.UIAction;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -18,6 +20,7 @@ import java.util.logging.Logger;
 public class MainForm {
     private static final Logger log = Logger.getLogger(MainForm.class.getName());
     private static ResourceBundle res = ResourceBundle.getBundle("com/ekeis/rema/properties/GUIBundle");
+    ResourceBundle resNoTranslation = ResourceBundle.getBundle("com/ekeis/rema/properties/NoTranslation");
 
     private JPanel contentPanel;
     private JEditorPane codeArea;
@@ -30,9 +33,34 @@ public class MainForm {
     private JFileChooser fileChooser;
     private JMenuItem menuFileSave;
 
+    private Machine machine;
+
     private void createUIComponents() {
         createJMenuBar();
         createFileChooser();
+    }
+
+    public MainForm() {
+        machine = new Machine();
+
+        buttonReset.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reset();
+            }
+        });
+        buttonRun.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                run();
+            }
+        });
+        buttonStep.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                step();
+            }
+        });
     }
 
     private void createFileChooser() {
@@ -64,7 +92,7 @@ public class MainForm {
             @Override
             public void actionPerformed(ActionEvent e) {
                 menuFileSave.setEnabled(false);
-                codeArea.setText(ResourceBundle.getBundle("com/ekeis/rema/properties/NoTranslation").getString("code.default"));
+                codeArea.setText(resNoTranslation.getString("code.default"));
             }
         });
         fileMenu.add(new UIAction(res.getString("menu.file.load")) {
@@ -93,6 +121,9 @@ public class MainForm {
                 SettingsDialog dialog = new SettingsDialog();
                 dialog.pack();
                 dialog.setVisible(true);
+                if (dialog.getResult() == SettingsDialog.Result.OK) {
+                    reset();
+                }
             }
         });
         fileMenu.add(new JSeparator(JSeparator.HORIZONTAL));
@@ -105,17 +136,29 @@ public class MainForm {
 
         JMenu helpMenu = new JMenu(res.getString("menu.help"));
         jMenuBar.add(helpMenu);
+        helpMenu.add(new UIAction(res.getString("menu.help.commands")) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CommandsDialog dialog = new CommandsDialog();
+                dialog.pack();
+                dialog.setVisible(true);
+            }
+        });
         if (Desktop.isDesktopSupported()) {
             helpMenu.add(new UIAction(res.getString("menu.help.feedback")) {
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    String mail = resNoTranslation.getString("feedback.mail");
                     try {
-                        Desktop.getDesktop().mail(new URI(
-                                ResourceBundle.getBundle("com/ekeis/rema/properties/NoTranslation").getString("feedback.uri")));
+                        Desktop.getDesktop().mail(new URI(String.format(
+                                resNoTranslation.getString("feedback.uri"), mail)));
                         log.info("Opening mail program for feedback mail");
                     } catch (IOException | URISyntaxException ex) {
                         log.warning("Failed to open mail program for feedback mail");
                         ex.printStackTrace();
+                        JOptionPane.showMessageDialog(contentPanel, String.format(
+                                res.getString("feedback.not_supported.msg"), mail),
+                                res.getString("feedback.not_supported.title"), JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
             });
@@ -180,8 +223,17 @@ public class MainForm {
         }
     }
 
+    private void run() {
+        machine.run();
+    }
+    private void step() {
+        machine.step();
+    }
+    private void reset() {
+        machine.reset();
+    }
 
-    public JFrame getFrame() {
+    public JFrame createFrame() {
         JFrame frame = new JFrame(res.getString("app.name"));
         frame.setContentPane(contentPanel);
         frame.setJMenuBar(jMenuBar);
