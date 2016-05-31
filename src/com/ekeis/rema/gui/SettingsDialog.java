@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ */
+
 package com.ekeis.rema.gui;
 
 import com.ekeis.rema.prefs.Prefs;
@@ -58,8 +62,8 @@ public class SettingsDialog extends JDialog {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
-        maxValModel = new SpinnerNumberModel((double) 0, (double) Long.MIN_VALUE, (double) Long.MAX_VALUE, (double) 1);
-        minValModel = new SpinnerNumberModel((double) 0, (double) Long.MIN_VALUE, (double) Long.MAX_VALUE, (double) 1);
+        maxValModel = new SpinnerNumberModel((double) 0, (double) Integer.MIN_VALUE, (double) Integer.MAX_VALUE, (double) 1);
+        minValModel = new SpinnerNumberModel((double) 0, (double) Integer.MIN_VALUE, (double) Integer.MAX_VALUE, (double) 1);
         maxValueSpinner.setModel(maxValModel);
         minValueSpinner.setModel(minValModel);
         maxValModel.addChangeListener(new ChangeListener() {

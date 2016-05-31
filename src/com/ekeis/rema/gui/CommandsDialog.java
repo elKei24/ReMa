@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ */
+
 package com.ekeis.rema.gui;
 
 import javax.swing.*;
@@ -26,15 +30,15 @@ public class CommandsDialog extends JDialog {
     private JLabel titlePane;
 
     private static final String[] commands = new String[] {
-            "cmd.storage.load",
             "cmd.storage.dload",
+            "cmd.storage.load",
             "cmd.storage.store",
             "cmd.math.add",
             "cmd.math.sub",
             "cmd.math.mult",
             "cmd.math.div",
-            "cmd.jump.jge",
             "cmd.jump.jump",
+            "cmd.jump.jge",
             "cmd.jump.jgt",
             "cmd.jump.jle",
             "cmd.jump.jlt",
@@ -51,7 +55,6 @@ public class CommandsDialog extends JDialog {
         setModal(false);
         getRootPane().setDefaultButton(buttonOK);
         setTitle(guiRes.getString("commands.title"));
-        //TODO setShowInTaskbar!
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ */
+
 package com.ekeis.rema.engine.exceptions;
 
 import com.ekeis.rema.engine.log.LogMessage;
@@ -9,7 +13,7 @@ import java.util.ResourceBundle;
  * @author Elias Keis (30.05.2016)
  */
 public abstract class RemaException extends RuntimeException implements LogMessage {
-    protected static final ResourceBundle res = ResourceBundle.getBundle("com/ekeis/rema/properties/Log");
+    public static final ResourceBundle EX_RES = ResourceBundle.getBundle("com/ekeis/rema/properties/Log");
 
     private int line = -1;
     public RemaException(@NotNull String msg, int line) {
@@ -22,7 +26,7 @@ public abstract class RemaException extends RuntimeException implements LogMessa
 
     @Override
     public String getCategory() {
-        return res.getString("exception");
+        return EX_RES.getString("exception");
     }
     @Override
     public int getLine() {

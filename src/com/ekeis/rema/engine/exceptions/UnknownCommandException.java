@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ */
+
 package com.ekeis.rema.engine.exceptions;
 
 /**
@@ -5,6 +9,6 @@ package com.ekeis.rema.engine.exceptions;
  */
 public class UnknownCommandException extends RemaException {
     public UnknownCommandException(int line, String command) {
-        super(String.format(res.getString("exception.unknown_command"), command), line);
+        super(String.format(EX_RES.getString("exception.unknown_command"), command), line);
     }
 }

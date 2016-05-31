@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ */
+
 package com.ekeis.rema.engine.exceptions;
 
 /**
@@ -5,6 +9,6 @@ package com.ekeis.rema.engine.exceptions;
  */
 public class WrongParametersException extends RemaException {
     public WrongParametersException(int line) {
-        super(res.getString("exception.invalid_parameters"), line);
+        super(EX_RES.getString("exception.invalid_parameters"), line);
     }
 }

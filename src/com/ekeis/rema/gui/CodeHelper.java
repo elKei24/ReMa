@@ -1,10 +1,15 @@
+/*
+ * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ */
+
 package com.ekeis.rema.gui;
 
-import com.ekeis.rema.engine.LanguageConstants;
+import com.ekeis.rema.engine.Program;
+import com.ekeis.rema.engine.exceptions.SyntaxException;
+import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -22,30 +27,14 @@ public class CodeHelper {
 
             //Zeile allgemein optimieren
             line.trim();
-            for (String commentPrefix : LanguageConstants.commentPrefixes) {
-                if (line.startsWith(commentPrefix)) {
-                    continue forLine;
-                }
-            }
+            if (Program.isCommentLine(line)) continue forLine;
 
             //Zeilennummer anpassen
-            ////Erkennen, ob Zeilennummer vorhanden
-            hasNumberCheck: {
-                int splitpos = line.indexOf(' ');
-                String firstPart;
-                if (splitpos < 0) {
-                    firstPart = line;
-                } else {
-                    firstPart = line.substring(0, splitpos);
-                }
-                if (!firstPart.endsWith(":")) break hasNumberCheck;
-                try {
-                    int lineNrOld = Integer.valueOf(firstPart.substring(0, firstPart.length() - 1));
-                } catch (NumberFormatException nfe) {
-                    break hasNumberCheck;
-                }
-                //nicht abgebrochen, also Zeilennummer da → löschen
-                line = line.substring(splitpos + 1);
+            try {
+                Pair<Integer, String> result = Program.cutLineNumber(line);
+                line = result.getValue();
+            } catch (SyntaxException se) {
+                //line number probably missing → just go on
             }
             ////Zeilennummer vorne anfügen
             line = String.format("%d: %s", lineNr, line);

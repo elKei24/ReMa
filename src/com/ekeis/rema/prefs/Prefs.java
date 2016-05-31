@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ */
+
 package com.ekeis.rema.prefs;
 
 import java.util.logging.Logger;
@@ -48,14 +52,14 @@ public class Prefs {
         sync();
     }
     public long getRegisterMax() {
-        return prefs.getLong(KEY_REGISTER_MAX, Byte.MAX_VALUE);
+        return prefs.getLong(KEY_REGISTER_MAX, Integer.MAX_VALUE);
     }
     public void setRegisterMax(long val) {
         prefs.putLong(KEY_REGISTER_MAX, val);
         sync();
     }
     public long getRegisterMin() {
-        return prefs.getLong(KEY_REGISTER_MIN, Byte.MIN_VALUE);
+        return prefs.getLong(KEY_REGISTER_MIN, Integer.MIN_VALUE);
     }
     public void setRegisterMin(long val) {
         prefs.putLong(KEY_REGISTER_MIN, val);
