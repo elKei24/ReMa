@@ -4,6 +4,7 @@
 
 package com.ekeis.rema.engine;
 
+import com.ekeis.rema.engine.exceptions.InternalException;
 import com.ekeis.rema.engine.exceptions.RemaException;
 import com.ekeis.rema.engine.exceptions.runtime.RegisterNotFoundException;
 import com.ekeis.rema.engine.exceptions.syntax.SyntaxException;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,6 +41,7 @@ public class Machine {
     public synchronized void reset() {
         log.info("Resetting machine ...");
         counter = new Register(1);
+        akku = new Register(0);
 
         int numRegisters = Prefs.getInstance().getNumberRegisters();
         registers = new ArrayList<>(numRegisters);
@@ -49,7 +52,11 @@ public class Machine {
     }
 
     public void step() {
-        if (!running && !isEnd) stepThreadsafe();
+        if (!running && !isEnd) {
+            setRunning(true);
+            stepThreadsafe();
+            setRunning(false);
+        }
     }
     private synchronized void stepThreadsafe() {
         try {
@@ -62,14 +69,14 @@ public class Machine {
     public void run() {
         if (!running && !isEnd) {
             log.info("Machine performing run ...");
-            running = true;
+            setRunning(true);
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     while (!isEnd && running) {
                         stepThreadsafe();
                         try {
-                            Thread.sleep(100);
+                            Thread.sleep(50);
                         } catch (InterruptedException e) {
                         }
                     }
@@ -80,7 +87,7 @@ public class Machine {
     }
 
     public synchronized void pause() {
-        running = false;
+        setRunning(false);
     }
     public synchronized void end() {
         isEnd = true;
@@ -126,12 +133,20 @@ public class Machine {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    setProgramThreadsafe(new Program(Machine.this, code));
+                    boolean success = false;
+                    try {
+                        setProgramThreadsafe(new Program(Machine.this, code));
+                        success = true;
+                    } catch (RemaException re) {
+                        log(re);
+                    } catch (Exception ex) {
+                        log.log(Level.WARNING, "Could not compile", ex);
+                        log(new InternalException(ex));
+                    }
+                    for (MachineListener l : new ArrayList<>(listeners)) l.onCompileTried(Machine.this, success);
                 }
             }, "ProgramCompiler");
             thread.start();
-            //TODO returnwert nutzen, Run verbieten, wenn Syntaxfehler bestehen
-            //TODO Thread kann nicht returnen!
             return true;
         } catch (SyntaxException se) {
             log(se);
@@ -142,15 +157,27 @@ public class Machine {
         this.program = program;
     }
     public void log(LogMessage msg) {
-        for (MachineListener l : new ArrayList<>(listeners)) l.onLogMessage(msg);
+        for (MachineListener l : new ArrayList<>(listeners)) l.onLogMessage(this, msg);
     }
     public boolean canStartRun() {
         return !isEnd && !running;
     }
+    private void setRunning(boolean running) {
+        if (this.running != running) {
+            this.running = running;
+            for (MachineListener l : new ArrayList<>(listeners)) l.onRunningChanged(this, running);
+        }
+    }
+
+    public boolean isEnd() {
+        return isEnd;
+    }
 
     //listener
     public interface MachineListener {
-        void onLogMessage(LogMessage msg);
+        void onLogMessage(Machine machine, LogMessage msg);
+        void onCompileTried(Machine machine, boolean success);
+        void onRunningChanged(Machine machine, boolean running);
     }
     public void addListener(MachineListener l) {
         listeners.add(l);

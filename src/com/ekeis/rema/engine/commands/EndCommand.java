@@ -24,13 +24,16 @@ public class EndCommand extends Command {
         switch (type) {
             case END:
                 machine.end();
+                machine.increaseIP();
                 break;
             case PAUSE:
                 machine.pause();
+                machine.increaseIP();
                 break;
             default:
                 throw new UnsupportedOperationException("No action for the given type defined");
         }
+        logExecution("end");
     }
 
 }

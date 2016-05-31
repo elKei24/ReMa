@@ -27,16 +27,23 @@ public class TransportCommand extends Command {
     public void perform() {
         Register Ra = machine.getAkku();
         Register Rx = machine.getRegister(index, register);
+        String msg;
+        long transported;
         switch (type) {
             case STORE:
-                Rx.setValue(Ra.getValue());
+                transported = Ra.getValue();
+                Rx.setValue(transported);
+                msg = "transport.store";
                 break;
             case LOAD:
-                Ra.setValue(Rx.getValue());
+                transported = Rx.getValue();
+                Ra.setValue(transported);
+                msg = "transport.load";
                 break;
             default:
                 throw new UnsupportedOperationException("No action for the given type defined");
         }
         machine.increaseIP();
+        logExecution(msg, transported, register);
     }
 }

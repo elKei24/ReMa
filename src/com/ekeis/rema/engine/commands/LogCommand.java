@@ -20,16 +20,7 @@ public class LogCommand extends Command {
 
     @Override
     public void perform() {
-        machine.log(new LogMessage() {
-            @Override
-            public String getMessage() {
-                return msg;
-            }
-
-            @Override
-            public Category getCategory() {
-                return Category.DEBUG;
-            }
-        });
+        logExecution(LogMessage.Category.DEBUG, msg);
+        machine.increaseIP();
     }
 }

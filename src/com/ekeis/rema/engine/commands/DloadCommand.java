@@ -23,5 +23,6 @@ public class DloadCommand extends Command {
         Register Ra = machine.getAkku();
         Ra.setValue(val);
         machine.increaseIP();
+        logExecution("transport.dload", val);
     }
 }

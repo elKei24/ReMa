@@ -46,6 +46,7 @@ public class MainForm implements Machine.MachineListener {
     private JButton buttonStep;
     private JButton buttonReset;
     private JTable logTable;
+    private JButton buttonPause;
     private JFileChooser fileChooser;
     private JMenuItem menuFileSave;
 
@@ -53,8 +54,6 @@ public class MainForm implements Machine.MachineListener {
     private CompoundUndoManager undoManager;
     private JMenuItem menuCodeUndo, popupCodeUndo, menuCodRedo, popupCodeRedo, menuMachineRun, menuMachineStep, menuMachineReset;
     private LogTableModel logModel;
-
-    boolean programUpToDate = false;
 
 
     public MainForm() {
@@ -80,6 +79,12 @@ public class MainForm implements Machine.MachineListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 step();
+            }
+        });
+        buttonPause.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pause();
             }
         });
 
@@ -110,6 +115,8 @@ public class MainForm implements Machine.MachineListener {
                 checkUndoEnabled();
             }
         });
+
+        reset();
     }
 
     private void checkUndoEnabled() {
@@ -429,26 +436,24 @@ public class MainForm implements Machine.MachineListener {
     }
 
     private void run() {
-        updateProgram();
         machine.run();
     }
     private void step() {
-        updateProgram();
         machine.step();
     }
     private void reset() {
+        logModel.clear();
         machine.reset();
+        machine.setProgram(codeArea.getText());
     }
-    private void updateProgram() {
-        if (!programUpToDate) {
-            machine.reset();
-            machine.setProgram(codeArea.getText());
-            logModel.clear();
-        }
+    private void pause() {
+        machine.pause();
     }
 
     private void onCodeChange() {
         machine.pause();
+        buttonStep.setEnabled(false);
+        buttonRun.setEnabled(false);
     }
 
     private void undo() {
@@ -479,9 +484,9 @@ public class MainForm implements Machine.MachineListener {
 
     //Machine listener
     @Override
-    public void onLogMessage(LogMessage msg) {
+    public void onLogMessage(Machine machine, LogMessage msg) {
         log.fine(msg.getCategory().toString() + ": " + msg.getMessage());
-        String surrounding;
+        /*String surrounding;
         switch (msg.getCategory()) {
             case DEBUG:
                 surrounding = "<p><i>%s</i></p>";
@@ -489,11 +494,26 @@ public class MainForm implements Machine.MachineListener {
                 surrounding = "<p style=\"color:red\"><b>%s</b></p>";
             default:
                 surrounding="%s";
-        }
+        }*/
         logModel.add(msg);
         logModel.fireTableDataChanged();
     }
 
+    @Override
+    public void onCompileTried(Machine machine, boolean success) {
+        buttonStep.setEnabled(success);
+        buttonRun.setEnabled(success);
+    }
+
+    @Override
+    public void onRunningChanged(Machine machine, boolean running) {
+        buttonPause.setVisible(running);
+        buttonStep.setVisible(!running);
+        buttonRun.setVisible(!running);
+        buttonReset.setVisible(!running);
+    }
+
+    //Table
     private void createUIComponents() {
         createLogTable();
     }
@@ -562,8 +582,8 @@ public class MainForm implements Machine.MachineListener {
                     switch (msg.getCategory()) {
                         case DEBUG:
                             return logRes.getString("debug");
-                        case INFO:
-                            return logRes.getString("info");
+                        case COMMAND:
+                            return logRes.getString("command");
                         case ERROR:
                             return logRes.getString("exception");
                     }
@@ -578,9 +598,6 @@ public class MainForm implements Machine.MachineListener {
             switch (msg.getCategory()) {
                 case ERROR:
                     formatter = "<span style=\"color:red;\">%s</span>";
-                    break;
-                case DEBUG:
-                    formatter = "<i></i>";
                     break;
             }
             return String.format("<html>"+formatter+"</html>", txt);

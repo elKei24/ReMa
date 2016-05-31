@@ -5,6 +5,8 @@
 package com.ekeis.rema.engine;
 
 import com.ekeis.rema.engine.commands.*;
+import com.ekeis.rema.engine.exceptions.InternalException;
+import com.ekeis.rema.engine.exceptions.RemaException;
 import com.ekeis.rema.engine.exceptions.runtime.LineNotFoundException;
 import com.ekeis.rema.engine.exceptions.syntax.*;
 import javafx.util.Pair;
@@ -12,6 +14,7 @@ import javafx.util.Pair;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -24,8 +27,11 @@ public class Program {
     List<Command> commands = new LinkedList<Command>();
     Machine machine;
 
-    public Program(Machine machine) {}
+    public Program(Machine machine) {
+        this.machine = machine;
+    }
     public Program(Machine machine, String code) {
+        this(machine);
         this.commands = compile(code);
     }
     protected List<Command> compile(String code) throws SyntaxException {
@@ -67,11 +73,11 @@ public class Program {
         try {
             switch (cmd) {
                 case "DLOAD":
-                    return new DloadCommand(machine, lineNr, Long.decode(parts.get(0)));
+                    return new DloadCommand(machine, lineNr, Long.decode(parts.get(1)));
                 case "LOAD":
-                    return new TransportCommand(machine, lineNr, Integer.decode(parts.get(0)), TransportCommand.Type.LOAD);
+                    return new TransportCommand(machine, lineNr, Integer.decode(parts.get(1)), TransportCommand.Type.LOAD);
                 case "STORE":
-                    return new TransportCommand(machine, lineNr, Integer.decode(parts.get(0)), TransportCommand.Type.STORE);
+                    return new TransportCommand(machine, lineNr, Integer.decode(parts.get(1)), TransportCommand.Type.STORE);
                 case "ADD":
                     return new ArithmeticCommand(machine, lineNr, Integer.decode(parts.get(1)), ArithmeticCommand.Type.ADD);
                 case "SUB":
@@ -129,17 +135,18 @@ public class Program {
      * @return the line number
      * @throws SyntaxException if the line number is missing
      */
-    public static Pair<Integer, String> cutLineNumber(String line) throws SyntaxException {
+    public static Pair<Integer, String> cutLineNumber(final String line) throws SyntaxException {
         ////Erkennen, ob Zeilennummer vorhanden
         hasNumberCheck: {
             int splitpos = line.indexOf(' ');
             String firstPart;
+            String rest;
             if (splitpos < 0) {
                 firstPart = line;
-                line = "";
+                rest = "";
             } else {
                 firstPart = line.substring(0, splitpos);
-                line = line.substring(splitpos + 1);
+                rest = line.substring(splitpos + 1);
             }
             if (!firstPart.endsWith(":")) break hasNumberCheck;
             int lineNrOld;
@@ -150,7 +157,7 @@ public class Program {
                 break hasNumberCheck;
             }
             //nicht abgebrochen, also Zeilennummer da → löschen
-            return new Pair<>(lineNrOld, line);
+            return new Pair<>(lineNrOld, rest);
         }
         //canceled → line number missing/malformed
         throw new MissingLineNumberException(line);
@@ -158,9 +165,14 @@ public class Program {
 
     public void execute(int l) {
         try {
-            commands.get(l-1).perform();
+            commands.get(l - 1).perform();
+        } catch (RemaException re) {
+            throw re;
         } catch (IndexOutOfBoundsException ioobe) {
             throw new LineNotFoundException(l);
+        } catch (Exception ex) {
+            log.log(Level.WARNING, "Could not execute command", ex);
+            throw new InternalException(ex);
         }
     }
 }

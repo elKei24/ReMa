@@ -12,7 +12,7 @@ import java.util.ResourceBundle;
 /**
  * @author Elias Keis (30.05.2016)
  */
-public abstract class RemaException extends java.lang.RuntimeException implements LogMessage {
+public class RemaException extends java.lang.RuntimeException implements LogMessage {
     public static final ResourceBundle EX_RES = ResourceBundle.getBundle("com/ekeis/rema/properties/Log");
 
     public RemaException(@NotNull String msg) {

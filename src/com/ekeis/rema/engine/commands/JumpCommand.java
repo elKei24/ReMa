@@ -25,6 +25,7 @@ public class JumpCommand extends Command {
     public void perform() {
         boolean ok;
         long a = machine.getAkku().getValue();
+        String msg;
         switch (type) {
             case JUMP:
                 ok = true;
@@ -52,8 +53,10 @@ public class JumpCommand extends Command {
         }
         if (ok) {
             machine.getCounter().setValue(line);
+            logExecution("jump.conditions_satisfied", line, a);
         } else {
             machine.increaseIP();
+            logExecution("jump.condition_check_failed", a);
         }
     }
 }

@@ -29,23 +29,29 @@ public class ArithmeticCommand extends Command {
         Register Rx = machine.getRegister(index, register);
         long a = Ra.getValue();
         long b = Rx.getValue();
+        String msg;
         switch (type) {
             case ADD:
                 a+=b;
+                msg = "arithmetic.add";
                 break;
             case SUB:
                 a-=b;
+                msg = "arithmetic.sub";
                 break;
             case MULT:
                 a*=b;
+                msg = "arithmetic.mult";
                 break;
             case DIV:
                 a/=b;
+                msg = "arithmetic.div";
                 break;
             default:
                 throw new UnsupportedOperationException("No action for the given type defined");
         }
         Ra.setValue(a);
         machine.increaseIP();
+        logExecution(msg, b, register);
     }
 }

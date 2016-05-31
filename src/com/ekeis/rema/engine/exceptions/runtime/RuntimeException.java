@@ -15,7 +15,9 @@ public class RuntimeException extends RemaException
         super(String.format(EX_RES.getString("exception.runtime"), lineNr));
     }
     protected RuntimeException(int lineNr, String id, Object... formatContent) {
-        super(String.format(EX_RES.getString("exception.runtime.details"), lineNr,
-                String.format(EX_RES.getString("exception.runtime." + id), formatContent)));
+        this(lineNr, String.format(EX_RES.getString("exception.runtime." + id), formatContent));
+    }
+    public RuntimeException(int lineNr, String extraMessage) {
+        super(String.format(EX_RES.getString("exception.runtime.details"), lineNr, extraMessage));
     }
 }
