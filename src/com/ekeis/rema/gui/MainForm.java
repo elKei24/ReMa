@@ -1,6 +1,11 @@
+/*
+ * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ */
+
 package com.ekeis.rema.gui;
 
 import com.ekeis.rema.engine.Machine;
+import com.ekeis.rema.engine.log.LogMessage;
 import com.ekeis.rema.prefs.Prefs;
 import sun.swing.UIAction;
 
@@ -10,6 +15,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.table.AbstractTableModel;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import java.awt.*;
@@ -19,13 +25,15 @@ import java.awt.event.KeyEvent;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
  * @author Elias Keis (29.05.2016)
  */
-public class MainForm {
+public class MainForm implements Machine.MachineListener {
     private static final Logger log = Logger.getLogger(MainForm.class.getName());
     private static ResourceBundle res = ResourceBundle.getBundle("com/ekeis/rema/properties/GUIBundle");
     ResourceBundle resNoTranslation = ResourceBundle.getBundle("com/ekeis/rema/properties/NoTranslation");
@@ -33,21 +41,25 @@ public class MainForm {
     private JPanel contentPanel;
     private JEditorPane codeArea;
     private JPanel registerOverview;
-    private JTextArea outputArea;
     private JMenuBar jMenuBar;
     private JButton buttonRun;
     private JButton buttonStep;
     private JButton buttonReset;
+    private JTable logTable;
     private JFileChooser fileChooser;
     private JMenuItem menuFileSave;
 
     private Machine machine;
     private CompoundUndoManager undoManager;
     private JMenuItem menuCodeUndo, popupCodeUndo, menuCodRedo, popupCodeRedo, menuMachineRun, menuMachineStep, menuMachineReset;
+    private LogTableModel logModel;
+
+    boolean programUpToDate = false;
 
 
     public MainForm() {
         machine = new Machine();
+        machine.addListener(this);
 
         createJMenuBar();
         createFileChooser();
@@ -417,37 +429,26 @@ public class MainForm {
     }
 
     private void run() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                machine.run();
-            }
-        }, "machineRunThread").start();
+        updateProgram();
+        machine.run();
     }
     private void step() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                machine.step();
-            }
-        }, "machineStepThread").start();
+        updateProgram();
+        machine.step();
     }
     private void reset() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                machine.reset();
-            }
-        }, "machineResetThread").start();
+        machine.reset();
+    }
+    private void updateProgram() {
+        if (!programUpToDate) {
+            machine.reset();
+            machine.setProgram(codeArea.getText());
+            logModel.clear();
+        }
     }
 
     private void onCodeChange() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                machine.reset(codeArea.getText());
-            }
-        }, "machineResetCodeThread").start();
+        machine.pause();
     }
 
     private void undo() {
@@ -474,5 +475,115 @@ public class MainForm {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setPreferredSize(new Dimension(500, 600));
         return frame;
+    }
+
+    //Machine listener
+    @Override
+    public void onLogMessage(LogMessage msg) {
+        log.fine(msg.getCategory().toString() + ": " + msg.getMessage());
+        String surrounding;
+        switch (msg.getCategory()) {
+            case DEBUG:
+                surrounding = "<p><i>%s</i></p>";
+            case ERROR:
+                surrounding = "<p style=\"color:red\"><b>%s</b></p>";
+            default:
+                surrounding="%s";
+        }
+        logModel.add(msg);
+        logModel.fireTableDataChanged();
+    }
+
+    private void createUIComponents() {
+        createLogTable();
+    }
+    private void createLogTable() {
+        logModel = new LogTableModel();
+        logTable = new JTable(logModel);
+        /*ogTable.getColumnModel().getColumn(0).setMinWidth(55);
+        logTable.getColumnModel().getColumn(0).setMaxWidth(100);
+        logTable.getColumnModel().getColumn(0).setPreferredWidth(70);*/
+        JPopupMenu popup = new JPopupMenu(res.getString("menu.log"));
+        JMenuItem menuClear = popup.add(new UIAction(res.getString("menu.log.clear")) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logModel.clear();
+
+            }
+        });
+        logTable.setComponentPopupMenu(popup);
+    }
+
+    public class LogTableModel extends AbstractTableModel {
+        List<LogMessage> entries = new LinkedList<>();
+
+        public LogTableModel() {
+            super();
+        }
+
+        @Override
+        public int getRowCount() {
+            return entries.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return 1;
+        }
+        @Override
+        public String getColumnName(int column) {
+            return res.getString("log.msg");
+            /*switch (column) {
+                case 0:
+                    return res.getString("log.category");
+                case 1:
+                    return res.getString("log.msg");
+                default:
+                    return "";
+            }*/
+        }
+
+
+        public void add(LogMessage msg) {
+            entries.add(0, msg);
+            fireTableRowsInserted(0, 0);
+        }
+        public void clear() {
+            entries.clear();
+            fireTableDataChanged();
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            ResourceBundle logRes = ResourceBundle.getBundle("com/ekeis/rema/properties/Log");
+            LogMessage msg = entries.get(rowIndex);
+            /*switch (columnIndex) {
+                case 0:
+                    switch (msg.getCategory()) {
+                        case DEBUG:
+                            return logRes.getString("debug");
+                        case INFO:
+                            return logRes.getString("info");
+                        case ERROR:
+                            return logRes.getString("exception");
+                    }
+                    return msg.getCategory();
+                case 1:
+                    return msg.getMessage();
+                default:
+                    return "";
+            }*/
+            String txt = msg.getMessage();
+            String formatter = "%s";
+            switch (msg.getCategory()) {
+                case ERROR:
+                    formatter = "<span style=\"color:red;\">%s</span>";
+                    break;
+                case DEBUG:
+                    formatter = "<i></i>";
+                    break;
+            }
+            return String.format("<html>"+formatter+"</html>", txt);
+        }
     }
 }

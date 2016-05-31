@@ -11,9 +11,11 @@ import com.ekeis.rema.engine.Machine;
  */
 public abstract class Command {
     Machine machine;
+    int index;
 
-    protected Command(Machine machine) {
+    protected Command(Machine machine, int line) {
         this.machine = machine;
+        this.index = line;
     }
 
     public abstract void perform();

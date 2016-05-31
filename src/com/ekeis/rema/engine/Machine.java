@@ -4,6 +4,10 @@
 
 package com.ekeis.rema.engine;
 
+import com.ekeis.rema.engine.exceptions.RemaException;
+import com.ekeis.rema.engine.exceptions.runtime.RegisterNotFoundException;
+import com.ekeis.rema.engine.exceptions.syntax.SyntaxException;
+import com.ekeis.rema.engine.log.LogMessage;
 import com.ekeis.rema.prefs.Prefs;
 
 import java.util.ArrayList;
@@ -20,22 +24,16 @@ public class Machine {
     private List<Register> registers;
 
     private Set<MachineListener> listeners = new LinkedHashSet<>();
+
     public enum Flag {ZERO, NEGATIVE, OVERFLOW};
 
     private Register counter;
-    private boolean flagZero, flagNegative, flagOverflow;
-    private Program program = new Program();
+    private Register akku;
+    private Program program = new Program(this);
+    private boolean running, isEnd;
 
     public Machine() {
         reset();
-    }
-
-    public synchronized void reset(Program program) {
-        reset();
-        this.program = program;
-    }
-    public synchronized void reset(String code) {
-        reset(new Program(code));
     }
 
     public synchronized void reset() {
@@ -47,20 +45,46 @@ public class Machine {
         for (int i = 0; i < numRegisters; i++) {
             Register r = new Register();
             registers.add(r);
-            r.addListener(new Register.RegisterListener() {
-                @Override
-                public void onValueSet(RegisterValueSetEvent e) {
-                    if (e.wasOverflow()) setFlagOverflow(true);
-                }
-            });
         }
     }
 
-    public synchronized void step() {
-        log.info("Machine performing step ...");
+    public void step() {
+        if (!running && !isEnd) stepThreadsafe();
     }
-    public synchronized void run() {
-        log.info("Machine performing run ...");
+    private synchronized void stepThreadsafe() {
+        try {
+            program.execute((int) counter.getValue());
+        } catch (RemaException re) {
+            log(re);
+            pause();
+        }
+    }
+    public void run() {
+        if (!running && !isEnd) {
+            log.info("Machine performing run ...");
+            running = true;
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (!isEnd && running) {
+                        stepThreadsafe();
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                        }
+                    }
+                }
+            }, "CodeRunner");
+            thread.start();
+        }
+    }
+
+    public synchronized void pause() {
+        running = false;
+    }
+    public synchronized void end() {
+        isEnd = true;
+        pause();
     }
 
     //getters/setters
@@ -71,46 +95,67 @@ public class Machine {
         return counter;
     }
 
-    public boolean isFlagZero() {
-        return flagZero;
+    public Register getAkku() {
+        return akku;
     }
 
-    public void setFlagZero(boolean flagZero) {
-        if (flagZero != this.flagZero) {
-            this.flagZero = flagZero;
-            onFlagChange(Flag.ZERO, flagZero);
+    public void increaseIP() {
+        Register ip = counter;
+        ip.setValue(ip.getValue() + 1);
+    }
+
+    public Register getRegister(int curLine, int regIndex) {
+        try {
+            return registers.get(regIndex - 1);
+        } catch (IndexOutOfBoundsException ioobe) {
+            throw new RegisterNotFoundException(curLine, regIndex);
         }
     }
 
-    public boolean isFlagNegative() {
-        return flagNegative;
+    public Program getProgram() {
+        return program;
     }
 
-    public void setFlagNegative(boolean flagNegative) {
-        if (flagNegative != this.flagNegative) {
-            this.flagNegative = flagNegative;
-            onFlagChange(Flag.NEGATIVE, flagNegative);
+    /**
+     * Compiles the program and sets it
+     * @param code the code for the program
+     * @return true if it was a success, false if there was a syntax error (will be logged)
+     */
+    public boolean setProgram(final String code) {
+        try {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    setProgramThreadsafe(new Program(Machine.this, code));
+                }
+            }, "ProgramCompiler");
+            thread.start();
+            //TODO returnwert nutzen, Run verbieten, wenn Syntaxfehler bestehen
+            //TODO Thread kann nicht returnen!
+            return true;
+        } catch (SyntaxException se) {
+            log(se);
         }
+        return false;
     }
-
-    public boolean isFlagOverflow() {
-        return flagOverflow;
+    private synchronized void setProgramThreadsafe(Program program) {
+        this.program = program;
     }
-
-    public void setFlagOverflow(boolean flagOverflow) {
-        if (flagOverflow != this.flagOverflow) {
-            this.flagOverflow = flagOverflow;
-            onFlagChange(Flag.OVERFLOW, flagOverflow);
-        }
+    public void log(LogMessage msg) {
+        for (MachineListener l : new ArrayList<>(listeners)) l.onLogMessage(msg);
+    }
+    public boolean canStartRun() {
+        return !isEnd && !running;
     }
 
     //listener
     public interface MachineListener {
-        void onFlagChange(Machine machine, Flag flag, boolean value);
+        void onLogMessage(LogMessage msg);
     }
-    protected void onFlagChange(Flag flag, boolean value) {
-        for (MachineListener l : new ArrayList<>(listeners)) {
-            l.onFlagChange(this, flag, value);
-        }
+    public void addListener(MachineListener l) {
+        listeners.add(l);
+    }
+    public void removeListener(MachineListener l) {
+        listeners.remove(l);
     }
 }

@@ -27,6 +27,7 @@
             </constraints>
             <properties>
               <enabled value="true"/>
+              <preferredSize width="678" height="300"/>
               <resizeWeight value="0.75"/>
             </properties>
             <border type="none"/>
@@ -143,13 +144,17 @@
             <constraints>
               <splitpane position="right"/>
             </constraints>
-            <properties/>
+            <properties>
+              <preferredSize width="300" height="150"/>
+            </properties>
             <border type="none"/>
             <children>
-              <component id="60fda" class="javax.swing.JTextArea" binding="outputArea">
+              <component id="dbc29" class="javax.swing.JTable" binding="logTable" custom-create="true">
                 <constraints/>
                 <properties>
-                  <editable value="false"/>
+                  <autoResizeMode value="3"/>
+                  <autoscrolls value="true"/>
+                  <toolTipText resource-bundle="com/ekeis/rema/properties/GUIBundle" key="log.tooltip"/>
                 </properties>
               </component>
             </children>

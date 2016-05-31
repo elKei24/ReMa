@@ -5,7 +5,7 @@
 package com.ekeis.rema.gui;
 
 import com.ekeis.rema.engine.Program;
-import com.ekeis.rema.engine.exceptions.SyntaxException;
+import com.ekeis.rema.engine.exceptions.syntax.SyntaxException;
 import javafx.util.Pair;
 
 import java.util.ArrayList;
