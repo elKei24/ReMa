@@ -117,25 +117,40 @@
                       </component>
                     </children>
                   </grid>
-                  <scrollpane id="b7dc6">
+                  <scrollpane id="b7dc6" binding="registerScrollPane">
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties/>
                     <border type="empty"/>
                     <children>
-                      <grid id="12700" binding="registerOverview" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                        <margin top="0" left="0" bottom="0" right="0"/>
+                      <grid id="12700" layout-manager="BorderLayout" hgap="0" vgap="0">
                         <constraints/>
-                        <properties/>
+                        <properties>
+                          <requestFocusEnabled value="true"/>
+                          <toolTipText resource-bundle="com/ekeis/rema/properties/GUIBundle" key="overview.tooltip"/>
+                        </properties>
                         <border type="none"/>
-                        <children/>
+                        <children>
+                          <grid id="6bc69" binding="registerOverviewVIP" layout-manager="BorderLayout" hgap="0" vgap="0">
+                            <constraints border-constraint="North"/>
+                            <properties/>
+                            <border type="none"/>
+                            <children/>
+                          </grid>
+                          <grid id="21539" binding="registerOverview" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                            <constraints border-constraint="Center"/>
+                            <properties/>
+                            <border type="none"/>
+                            <children/>
+                          </grid>
+                        </children>
                       </grid>
                     </children>
                   </scrollpane>
                 </children>
               </grid>
-              <scrollpane id="cfcb0">
+              <scrollpane id="cfcb0" binding="editorScrollPane">
                 <constraints>
                   <splitpane position="left"/>
                 </constraints>

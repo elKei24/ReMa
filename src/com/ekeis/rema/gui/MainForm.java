@@ -5,6 +5,7 @@
 package com.ekeis.rema.gui;
 
 import com.ekeis.rema.engine.Machine;
+import com.ekeis.rema.engine.Register;
 import com.ekeis.rema.engine.log.LogMessage;
 import com.ekeis.rema.prefs.Prefs;
 import sun.swing.UIAction;
@@ -19,15 +20,13 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
-import java.util.ResourceBundle;
+import java.util.Timer;
 import java.util.logging.Logger;
 
 /**
@@ -47,13 +46,18 @@ public class MainForm implements Machine.MachineListener {
     private JButton buttonReset;
     private JTable logTable;
     private JButton buttonPause;
+    private JPanel registerOverviewVIP;
+    private JScrollPane registerScrollPane;
+    private JScrollPane editorScrollPane;
     private JFileChooser fileChooser;
     private JMenuItem menuFileSave;
 
     private Machine machine;
     private CompoundUndoManager undoManager;
-    private JMenuItem menuCodeUndo, popupCodeUndo, menuCodRedo, popupCodeRedo, menuMachineRun, menuMachineStep, menuMachineReset;
+    private JMenuItem menuCodeUndo, popupCodeUndo, menuCodRedo, popupCodeRedo, menuMachineRun, menuMachineStep,
+            menuMachineReset, menuMachinePause;
     private LogTableModel logModel;
+    private boolean compilationScheduled;
 
 
     public MainForm() {
@@ -62,6 +66,8 @@ public class MainForm implements Machine.MachineListener {
 
         createJMenuBar();
         createFileChooser();
+        registerOverview.setLayout(new WrapLayout(FlowLayout.LEFT));
+        createRegisters();
 
         buttonReset.addActionListener(new ActionListener() {
             @Override
@@ -116,7 +122,17 @@ public class MainForm implements Machine.MachineListener {
             }
         });
 
+        setPauseEnabled(false);
+        setResetEnabled(true);
+        setStepRunEnabled(false);
         reset();
+        editorScrollPane.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                Dimension scrollSize = editorScrollPane.getViewport().getSize();
+                codeArea.setBounds(0, 0, scrollSize.width, scrollSize.height);
+            }
+        });
     }
 
     private void checkUndoEnabled() {
@@ -306,12 +322,22 @@ public class MainForm implements Machine.MachineListener {
         menuMachineReset = machineMenu.add(new UIAction(res.getString("action.reset")) {
             @Override
             public void actionPerformed(ActionEvent e) {
-                run();
+                reset();
             }
         });
         menuMachineReset.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_3, KeyEvent.CTRL_DOWN_MASK));
         menuMachineReset.setMnemonic(menuMachineReset.getText().charAt(0));
         menuMachineReset.setToolTipText(res.getString("action.reset.tooltip"));
+
+        menuMachinePause = machineMenu.add(new UIAction(res.getString("action.pause")) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pause();
+            }
+        });
+        menuMachinePause.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_4, KeyEvent.CTRL_DOWN_MASK));
+        menuMachinePause.setMnemonic(menuMachinePause.getText().charAt(0));
+        menuMachinePause.setToolTipText(res.getString("action.pause.tooltip"));
 
 
         //HELP MENU
@@ -451,9 +477,38 @@ public class MainForm implements Machine.MachineListener {
     }
 
     private void onCodeChange() {
-        machine.pause();
-        buttonStep.setEnabled(false);
-        buttonRun.setEnabled(false);
+        final int DELAY = 1000;
+        setStepRunEnabled(false);
+        if (Prefs.getInstance().getLifeCompileEnabled()) {
+            if (!compilationScheduled) {
+                compilationScheduled = true;
+                java.util.Timer t = new Timer("codeCompilationTimer");
+                t.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        compilationScheduled = false;
+                        reset();
+                    }
+                }, new Date((new Date()).getTime() + DELAY));
+                reset();
+            }
+        } else {
+            machine.pause();
+        }
+    }
+    private void setStepRunEnabled(boolean enabled) {
+        buttonStep.setEnabled(enabled);
+        buttonRun.setEnabled(enabled);
+        menuMachineRun.setEnabled(enabled);
+        menuMachineStep.setEnabled(enabled);
+    }
+    private void setResetEnabled(boolean enabled) {
+        buttonReset.setEnabled(enabled);
+        menuMachineReset.setEnabled(enabled);
+    }
+    private void setPauseEnabled(boolean enabled) {
+        buttonPause.setEnabled(enabled);
+        menuMachinePause.setEnabled(enabled);
     }
 
     private void undo() {
@@ -501,8 +556,7 @@ public class MainForm implements Machine.MachineListener {
 
     @Override
     public void onCompileTried(Machine machine, boolean success) {
-        buttonStep.setEnabled(success);
-        buttonRun.setEnabled(success);
+        setStepRunEnabled(success);
     }
 
     @Override
@@ -511,6 +565,38 @@ public class MainForm implements Machine.MachineListener {
         buttonStep.setVisible(!running);
         buttonRun.setVisible(!running);
         buttonReset.setVisible(!running);
+        setStepRunEnabled(!running && !machine.isEnd());
+        setPauseEnabled(running);
+        setResetEnabled(!running);
+    }
+
+    @Override
+    public void onRegistersChanged(Machine machine) {
+        createRegisters();
+    }
+
+    //Registers
+    private void createRegisters() {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                log.finer("creating registers");
+                registerOverview.removeAll();
+                registerOverviewVIP.removeAll();
+                registerOverviewVIP.add(new RegisterGui(machine.getAkku(), res.getString("overview.akku")), BorderLayout.WEST);
+                registerOverviewVIP.add(new RegisterGui(machine.getCounter(), res.getString("overview.ip")), BorderLayout.EAST);
+
+                List<Register> registers = machine.getRegisters();
+                for (int i = 0; i < registers.size(); i++) {
+                    Register r = registers.get(i);
+                    if (r != null) {
+                        registerOverview.add(new RegisterGui(r, String.format(res.getString("overview.register"), i + 1)));
+                    }
+                }
+                registerScrollPane.validate();
+                registerScrollPane.repaint();
+            }
+        });
     }
 
     //Table

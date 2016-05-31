@@ -40,6 +40,10 @@ public class Machine {
 
     public synchronized void reset() {
         log.info("Resetting machine ...");
+
+        setRunning(false);
+        isEnd = false;
+
         counter = new Register(1);
         akku = new Register(0);
 
@@ -49,6 +53,7 @@ public class Machine {
             Register r = new Register();
             registers.add(r);
         }
+        for (MachineListener l : new ArrayList<>(listeners)) l.onRegistersChanged(this);
     }
 
     public void step() {
@@ -178,6 +183,7 @@ public class Machine {
         void onLogMessage(Machine machine, LogMessage msg);
         void onCompileTried(Machine machine, boolean success);
         void onRunningChanged(Machine machine, boolean running);
+        void onRegistersChanged(Machine machine);
     }
     public void addListener(MachineListener l) {
         listeners.add(l);

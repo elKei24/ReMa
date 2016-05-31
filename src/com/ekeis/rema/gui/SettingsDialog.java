@@ -22,6 +22,7 @@ public class SettingsDialog extends JDialog {
     private JSpinner registersSpinner;
     private JSpinner maxValueSpinner;
     private JSpinner minValueSpinner;
+    private JCheckBox lifeCompilationCheck;
     private SpinnerNumberModel minValModel, maxValModel;
 
     private Result result = Result.NONE;
@@ -102,12 +103,15 @@ public class SettingsDialog extends JDialog {
 
         maxValModel.setValue((double) Prefs.getInstance().getRegisterMax());
         minValModel.setValue((double) Prefs.getInstance().getRegisterMin());
+
+        lifeCompilationCheck.setSelected(Prefs.getInstance().getLifeCompileEnabled());
     }
 
     private void store() {
         Prefs.getInstance().setNumberRegisters((int) registersSpinner.getValue());
         Prefs.getInstance().setRegisterMin((long)(double) minValModel.getValue());
         Prefs.getInstance().setRegisterMax((long)(double) maxValModel.getValue());
+        Prefs.getInstance().setLifeCompileEnabled(lifeCompilationCheck.isSelected());
     }
 
     public Result getResult() {

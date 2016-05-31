@@ -18,6 +18,7 @@ public class Prefs {
     private static final String KEY_REGISTERS = PREF_SETTINGS + "registers";
     private static final String KEY_REGISTER_MAX = PREF_SETTINGS + "registerMax";
     private static final String KEY_REGISTER_MIN = PREF_SETTINGS + "registerMin";
+    private static final String KEY_LIFE_COMPILE = PREF_SETTINGS + "lifeCompilation";
     private static final String KEY_IGNORE_AUTOLINES = "ignoreAutolinesWarning";
 
     private static final Prefs instance = new Prefs();
@@ -45,7 +46,7 @@ public class Prefs {
     }
 
     public int getNumberRegisters() {
-        return prefs.getInt(KEY_REGISTERS, 5);
+        return prefs.getInt(KEY_REGISTERS, 15);
     }
     public void setNumberRegisters(int val) {
         prefs.putInt(KEY_REGISTERS, val);
@@ -70,5 +71,12 @@ public class Prefs {
     }
     public void setIgnoreAutolinesWarning(boolean ignore) {
         prefs.putBoolean(KEY_IGNORE_AUTOLINES, ignore);
+    }
+    public boolean getLifeCompileEnabled() {
+        return prefs.getBoolean(KEY_LIFE_COMPILE, true);
+    }
+    public void setLifeCompileEnabled(boolean enabled) {
+        prefs.putBoolean(KEY_LIFE_COMPILE, enabled);
+        sync();
     }
 }
