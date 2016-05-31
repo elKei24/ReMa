@@ -8,7 +8,10 @@ import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 public class CommandsDialog extends JDialog {
@@ -39,7 +42,8 @@ public class CommandsDialog extends JDialog {
             "cmd.jump.jne",
             "cmd.end",
             "cmd.debug.pause",
-            "cmd.debug.log"};
+            "cmd.debug.log",
+            "cmd.debug.comment"};
 
     public CommandsDialog() {
         super((Dialog) null);

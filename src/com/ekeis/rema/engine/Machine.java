@@ -13,17 +13,21 @@ public class Machine {
     private static final Logger log = Logger.getLogger(Machine.class.getName());
     private List<Register> registers;
     private Register counter;
+    private Program program = new Program();
 
     public Machine() {
         reset();
     }
 
-    public void reset(String newCode) {
+    public synchronized void reset(Program program) {
         reset();
-        //TODO set code
+        this.program = program;
+    }
+    public synchronized void reset(String code) {
+        reset(new Program(code));
     }
 
-    public void reset() {
+    public synchronized void reset() {
         log.info("Resetting machine ...");
         counter = new Register(1);
 
@@ -34,11 +38,10 @@ public class Machine {
         }
     }
 
-    public void step() {
+    public synchronized void step() {
         log.info("Machine performing step ...");
     }
-
-    public void run() {
+    public synchronized void run() {
         log.info("Machine performing run ...");
     }
 
@@ -46,13 +49,7 @@ public class Machine {
     public List<Register> getRegisters() {
         return registers;
     }
-
     public Register getCounter() {
         return counter;
-    }
-
-    public int getCurrentCommand() {
-        //TODO implement
-        return 0;
     }
 }

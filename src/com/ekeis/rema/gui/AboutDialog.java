@@ -20,7 +20,7 @@ public class AboutDialog extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
 
         String licensesWithoutWrap = labelLicenses.getText();
-        labelLicenses.setText(String.format("<html><body style='width: %dpx'>%s</body></html>", 110, licensesWithoutWrap));
+        labelLicenses.setText(String.format("<html><body style='width: %dpx'>%s</body></html>", 170, licensesWithoutWrap));
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
