@@ -4,8 +4,6 @@
 
 package com.ekeis.rema.engine;
 
-import com.ekeis.rema.prefs.Prefs;
-
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -16,9 +14,14 @@ import java.util.Set;
 public class Register {
     private Set<RegisterListener> listeners = new LinkedHashSet<>();
     private long value = 0;
+    private long max, min;
 
-    public Register() {}
-    public Register(long value) {
+    public Register(long min, long max) {
+        this.min = min;
+        this.max = max;
+    }
+    public Register(long min, long max, long value) {
+        this(min, max);
         this.value = value;
     }
 
@@ -28,8 +31,6 @@ public class Register {
     public void setValue(long value) {
         long oldVal = value;
         boolean overflow = false;
-        long min = Prefs.getInstance().getRegisterMin();
-        long max = Prefs.getInstance().getRegisterMax();
         if (value < min || value > max) overflow = true;
         if (overflow) {
             this.value = (value - min) % (max - min) + min;
@@ -37,6 +38,22 @@ public class Register {
             this.value = value;
         }
         onValueSet(oldVal, this.value, overflow);
+    }
+
+    public long getMax() {
+        return max;
+    }
+
+    public void setMax(long max) {
+        this.max = max;
+    }
+
+    public long getMin() {
+        return min;
+    }
+
+    public void setMin(long min) {
+        this.min = min;
     }
 
     //listeners stuff

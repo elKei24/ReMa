@@ -9,6 +9,7 @@ import com.ekeis.rema.engine.exceptions.RemaException;
 import com.ekeis.rema.engine.exceptions.runtime.RegisterNotFoundException;
 import com.ekeis.rema.engine.exceptions.syntax.SyntaxException;
 import com.ekeis.rema.engine.log.LogMessage;
+import com.ekeis.rema.prefs.Prefs;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -73,7 +74,8 @@ public class Machine {
             pause();
         }
     }
-    public void run() {
+    public synchronized void run() {
+        final long waittime = Prefs.getInstance().getRunWaittime();
         if (!running && !isEnd) {
             log.fine("Machine performing run ...");
             setRunning(true);
@@ -81,9 +83,9 @@ public class Machine {
                 @Override
                 public void run() {
                     while (!isEnd && running) {
-                        stepThreadsafe();
                         try {
-                            Thread.sleep(20);
+                            stepThreadsafe();
+                            Thread.sleep(waittime);
                         } catch (InterruptedException e) {
                         }
                     }
@@ -179,10 +181,14 @@ public class Machine {
         return isEnd;
     }
     public void setNumRegisters(int numRegisters) {
-        counter = new Register(1);
-        akku = new Register(0);registers = new ArrayList<>(numRegisters);
+        long min = Prefs.getInstance().getRegisterMin();
+        long max = Prefs.getInstance().getRegisterMax();
+
+        counter = new Register(min, max, 1);
+        akku = new Register(min, max);
+        registers = new ArrayList<>(numRegisters);
         for (int i = 0; i < numRegisters; i++) {
-            Register r = new Register();
+            Register r = new Register(min, max);
             registers.add(r);
         }
         for (MachineListener l : new ArrayList<>(listeners)) l.onRegistersChanged(this);

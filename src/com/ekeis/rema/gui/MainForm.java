@@ -22,7 +22,9 @@ import javax.swing.text.StyledDocument;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -129,6 +131,11 @@ public class MainForm implements Machine.MachineListener {
             }
         });
 
+        setPauseEnabled(false);
+        setResetEnabled(true);
+        setStepRunEnabled(false);
+        reset();
+
         undoManager = new CompoundUndoManager(codeArea);
         undoManager.setLimit(15);
         checkUndoEnabled();
@@ -136,18 +143,6 @@ public class MainForm implements Machine.MachineListener {
             @Override
             public void undoableEditHappened(UndoableEditEvent e) {
                 checkUndoEnabled();
-            }
-        });
-
-        setPauseEnabled(false);
-        setResetEnabled(true);
-        setStepRunEnabled(false);
-        reset();
-        editorScrollPane.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                Dimension scrollSize = editorScrollPane.getViewport().getSize();
-                codeArea.setBounds(0, 0, scrollSize.width, scrollSize.height);
             }
         });
     }
@@ -580,19 +575,15 @@ public class MainForm implements Machine.MachineListener {
 
     //Machine listener
     @Override
-    public void onLogMessage(Machine machine, LogMessage msg) {
-        log.finer(msg.getCategory().toString() + ": " + msg.getMessage());
-        /*String surrounding;
-        switch (msg.getCategory()) {
-            case DEBUG:
-                surrounding = "<p><i>%s</i></p>";
-            case ERROR:
-                surrounding = "<p style=\"color:red\"><b>%s</b></p>";
-            default:
-                surrounding="%s";
-        }*/
-        logModel.add(msg);
-        logModel.fireTableDataChanged();
+    public void onLogMessage(Machine machine, final LogMessage msg) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                log.finer(msg.getCategory().toString() + ": " + msg.getMessage());
+                logModel.add(msg);
+                logModel.fireTableDataChanged();
+            }
+        });
     }
 
     @Override
@@ -670,9 +661,6 @@ public class MainForm implements Machine.MachineListener {
     private void createLogTable() {
         logModel = new LogTableModel();
         logTable = new JTable(logModel);
-        /*ogTable.getColumnModel().getColumn(0).setMinWidth(55);
-        logTable.getColumnModel().getColumn(0).setMaxWidth(100);
-        logTable.getColumnModel().getColumn(0).setPreferredWidth(70);*/
         JPopupMenu popup = new JPopupMenu(res.getString("menu.log"));
         JMenuItem menuClear = popup.add(new UIAction(res.getString("menu.log.clear")) {
             @Override
@@ -703,14 +691,6 @@ public class MainForm implements Machine.MachineListener {
         @Override
         public String getColumnName(int column) {
             return res.getString("log.msg");
-            /*switch (column) {
-                case 0:
-                    return res.getString("log.category");
-                case 1:
-                    return res.getString("log.msg");
-                default:
-                    return "";
-            }*/
         }
 
 
@@ -727,22 +707,6 @@ public class MainForm implements Machine.MachineListener {
         public Object getValueAt(int rowIndex, int columnIndex) {
             ResourceBundle logRes = ResourceBundle.getBundle("com/ekeis/rema/properties/Log");
             LogMessage msg = entries.get(rowIndex);
-            /*switch (columnIndex) {
-                case 0:
-                    switch (msg.getCategory()) {
-                        case DEBUG:
-                            return logRes.getString("debug");
-                        case COMMAND:
-                            return logRes.getString("command");
-                        case ERROR:
-                            return logRes.getString("exception");
-                    }
-                    return msg.getCategory();
-                case 1:
-                    return msg.getMessage();
-                default:
-                    return "";
-            }*/
             String txt = msg.getMessage();
             String formatter = "%s";
             switch (msg.getCategory()) {

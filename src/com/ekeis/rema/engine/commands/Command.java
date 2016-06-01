@@ -25,10 +25,23 @@ public abstract class Command {
 
     public abstract void perform();
 
-    protected void logExecution(String id, Object... info) {
-        logExecution(LogMessage.Category.COMMAND, String.format(LOG_RES.getString("command." + id), info));
+    protected void logExecution(final String id, final Object... info) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                logExecutionNoThread(LogMessage.Category.COMMAND, String.format(LOG_RES.getString("command." + id), info));
+            }
+        }, "ExecutionLogger").start();
     }
-    protected void logExecution(final LogMessage.Category category, String details) {
+    protected void logExecution(final LogMessage.Category category, final String details) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                logExecutionNoThread(category, details);
+            }
+        }, "ExecutionLogger").start();
+    }
+    private void logExecutionNoThread(final LogMessage.Category category, String details) {
         final String txt = String.format(LOG_RES.getString("command.format"), index, details);
         machine.log(new LogMessage() {
             @Override

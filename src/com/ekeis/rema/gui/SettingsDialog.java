@@ -24,6 +24,7 @@ public class SettingsDialog extends JDialog {
     private JSpinner minValueSpinner;
     private JCheckBox lifeCompilationCheck;
     private JCheckBox syntaxHighlightingCheck;
+    private JSpinner runWaitSpinner;
     private SpinnerNumberModel minValModel, maxValModel;
 
     private Result result = Result.NONE;
@@ -108,6 +109,8 @@ public class SettingsDialog extends JDialog {
 
         lifeCompilationCheck.setSelected(prefs.getLifeCompileEnabled());
         syntaxHighlightingCheck.setSelected(prefs.getStyleCode());
+
+        runWaitSpinner.setModel(new SpinnerNumberModel((int) prefs.getRunWaittime(), 0, 5000, 1));
     }
 
     private void store() {
@@ -117,6 +120,7 @@ public class SettingsDialog extends JDialog {
         prefs.setRegisterMax((long)(double) maxValModel.getValue());
         prefs.setLifeCompileEnabled(lifeCompilationCheck.isSelected());
         prefs.setStyleCode(syntaxHighlightingCheck.isSelected());
+        prefs.setRunWaittime((int) runWaitSpinner.getValue());
         prefs.sync();
     }
 

@@ -11,6 +11,7 @@ import com.ekeis.rema.engine.exceptions.runtime.LineNotFoundException;
 import com.ekeis.rema.engine.exceptions.syntax.*;
 import javafx.util.Pair;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +40,7 @@ public class Program {
         List<Command> program = new LinkedList<>();
 
         lineFor: for (String line : code.trim().split("\n")) {
-            if (isCommentLine(line)) continue lineFor;
+            if (line.isEmpty() | isCommentLine(line)) continue lineFor;
             Pair<Integer, String> result = cutLineNumber(line);
             int lineNr = result.getKey();
             line = result.getValue();
@@ -53,6 +54,7 @@ public class Program {
             }
             program.set(lineNr-1, cmd);
         }
+        program = new ArrayList<>(program);
         for (int i = 0; i < program.size(); i++) {
             if (program.get(i) == null) {
                 throw new LineMissingException(i+1);

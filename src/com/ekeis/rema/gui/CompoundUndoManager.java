@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ */
+
 package com.ekeis.rema.gui;
 
 import javax.swing.*;
@@ -73,6 +77,7 @@ public class CompoundUndoManager extends UndoManager
 	*/
 	public void undoableEditHappened(UndoableEditEvent e)
 	{
+
 		//  Start a new compound edit
 
 		if (compoundEdit == null)

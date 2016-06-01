@@ -20,6 +20,7 @@ public class Prefs {
     private static final String KEY_REGISTER_MIN = PREF_SETTINGS + "registerMin";
     private static final String KEY_LIFE_COMPILE = PREF_SETTINGS + "lifeCompilation";
     private static final String KEY_STYLE_CODE = PREF_SETTINGS + "styleCode";
+    private static final String KEY_RUN_WAIT = PREF_SETTINGS + "waitMs";
     private static final String KEY_IGNORE_AUTOLINES = "ignoreAutolinesWarning";
 
     private static final Prefs instance = new Prefs();
@@ -81,5 +82,11 @@ public class Prefs {
     }
     public void setStyleCode(boolean enabled) {
         prefs.putBoolean(KEY_STYLE_CODE, enabled);
+    }
+    public long getRunWaittime() {
+        return prefs.getLong(KEY_RUN_WAIT, 3);
+    }
+    public void setRunWaittime(long ms) {
+        prefs.putLong(KEY_RUN_WAIT, ms);
     }
 }
