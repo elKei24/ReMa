@@ -8,14 +8,29 @@ import com.ekeis.rema.engine.Program;
 import com.ekeis.rema.engine.exceptions.syntax.SyntaxException;
 import javafx.util.Pair;
 
+import javax.swing.event.DocumentEvent;
+import javax.swing.text.*;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Elias Keis (30.05.2016)
  */
 public class CodeHelper {
+    private static final Logger log = Logger.getLogger(CodeHelper.class.getName());
+
+    //styles
+    private static final StyleContext styleContext = createStyles();
+    private static final String STYLE_DEFAULT = "defaultStyle";
+    private static final String STYLE_COMMENT = "comment";
+    private static final String STYLE_LINENR = "lineNr";
+    private static final String STYLE_COMMAND = "command";
+    private static final String STYLE_CURRENT_LINE = "currentLine";
+
     public static String updateLineNumbers(String code) {
         int lineNr = 1;
         List<String> lines = Arrays.asList(code.trim().split("\n"));
@@ -48,5 +63,110 @@ public class CodeHelper {
             codeNew += line + "\n";
         }
         return codeNew.trim();
+    }
+
+    public static void styleCode(Document document) throws IllegalArgumentException {
+        if (document == null || !(document instanceof StyledDocument)) {
+            throw new IllegalArgumentException("Document must be a StyledDocument");
+        }
+        styleCode((StyledDocument) document, 0, document.getLength() - 1);
+    }
+    public static void styleCodeCurrentLine(int lineOld, int lineNew) {
+
+    }
+    public static void styleCodeAfterChange(DocumentEvent e) throws IllegalArgumentException {
+        if (e.getDocument() == null || !(e.getDocument() instanceof StyledDocument)) {
+            throw new IllegalArgumentException("Document must be a StyledDocument");
+        }
+        StyledDocument doc = (StyledDocument) e.getDocument();
+
+        int start = e.getOffset();
+        int end = e.getLength() + start;
+
+        //stlye
+        styleCode(doc, start, end);
+    }
+    protected static void styleCode(StyledDocument doc, int start, int end) {
+        if (start > end) return;
+        String code;
+        try {
+            code = doc.getText(0, doc.getLength());
+        } catch (BadLocationException e) {
+            log.log(Level.SEVERE, "Failed to format code, could not obtain whole text", e);
+            return;
+        }
+
+        //don´t style only part of a line
+        start = code.lastIndexOf('\n', start);
+        if (start < 0) {
+            start = 0;
+        } else {
+            start++;
+        }
+        end = code.indexOf('\n', end);
+        if (end < 0) {
+            end = code.length();
+        }
+        //start is inclusive, end not!
+
+        //stlye lines
+        int lineStart = start;
+        while (lineStart < end) {
+            int lineEnd = code.indexOf('\n', lineStart + 1);
+            if (lineEnd > end || lineEnd < 0) lineEnd = end;
+
+            styleCodeLine(doc, lineStart, lineEnd);
+
+            lineStart = lineEnd;
+            while (lineStart < end && code.charAt(lineStart) == '\n') lineStart++;
+        }
+    }
+    protected static void styleCodeLine(StyledDocument doc, int startLine, int endLine) {
+        String code;
+        try {
+            code = doc.getText(0, doc.getLength());
+        } catch (BadLocationException e) {
+            log.log(Level.SEVERE, "Failed to format code, could not obtain whole text", e);
+            return;
+        }
+
+        String line = code.substring(startLine, endLine);
+        log.log(Level.FINER, "styling line: " + line);
+
+        //reset style for whole liine
+        doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_DEFAULT), true);
+
+        //style parts
+        if (Program.isCommentLine(line)) {
+            doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_COMMENT), false);
+        } else {
+
+        }
+    }
+
+    private static final StyleContext createStyles() {
+        StyleContext c = new StyleContext();
+
+        //default style
+        Style defaultStyle = c.addStyle(STYLE_DEFAULT, c.getStyle(StyleContext.DEFAULT_STYLE));
+
+        //comment style
+        Style commentStyle = c.addStyle(STYLE_COMMENT, defaultStyle);
+        StyleConstants.setForeground(commentStyle, Color.DARK_GRAY);
+        StyleConstants.setItalic(commentStyle, true);
+
+        //current line style
+        Style currentLineStyle = c.addStyle(STYLE_CURRENT_LINE, defaultStyle);
+        StyleConstants.setBackground(currentLineStyle, Color.yellow);
+
+        //linenr style
+        Style linenrStyle = c.addStyle(STYLE_LINENR, defaultStyle);
+        StyleConstants.setForeground(linenrStyle, Color.DARK_GRAY);
+
+        //command style
+        Style commandStyle = c.addStyle(STYLE_COMMAND, defaultStyle);
+        StyleConstants.setForeground(commandStyle, Color.BLUE);
+
+        return c;
     }
 }

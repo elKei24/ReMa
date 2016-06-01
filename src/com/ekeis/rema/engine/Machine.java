@@ -39,7 +39,7 @@ public class Machine {
     }
 
     public synchronized void reset() {
-        log.info("Resetting machine ...");
+        log.fine("Resetting machine ...");
 
         setRunning(false);
         isEnd = false;
@@ -58,6 +58,7 @@ public class Machine {
 
     public void step() {
         if (!running && !isEnd) {
+            log.fine("Machine performing step ...");
             setRunning(true);
             stepThreadsafe();
             setRunning(false);
@@ -73,7 +74,7 @@ public class Machine {
     }
     public void run() {
         if (!running && !isEnd) {
-            log.info("Machine performing run ...");
+            log.fine("Machine performing run ...");
             setRunning(true);
             Thread thread = new Thread(new Runnable() {
                 @Override

@@ -160,6 +160,7 @@
                   <component id="6f173" class="javax.swing.JEditorPane" binding="codeArea">
                     <constraints/>
                     <properties>
+                      <contentType value="text/plain"/>
                       <text resource-bundle="com/ekeis/rema/properties/NoTranslation" key="code.default"/>
                       <toolTipText resource-bundle="com/ekeis/rema/properties/GUIBundle" key="code.tooltip"/>
                     </properties>

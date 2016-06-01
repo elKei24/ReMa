@@ -17,6 +17,8 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.StyledDocument;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import java.awt.*;
@@ -27,6 +29,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -94,21 +97,34 @@ public class MainForm implements Machine.MachineListener {
             }
         });
 
+        try {
+            String codeDefault = resNoTranslation.getString("code.default");
+            StyledDocument codeDoc = new DefaultStyledDocument();
+            codeArea.setDocument(codeDoc);
+            codeArea.setText(codeDefault);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed to change codeArea document", e);
+        }
+        try {
+            CodeHelper.styleCode(codeArea.getDocument());
+        } catch (IllegalArgumentException iae) {
+            log.log(Level.WARNING, "Failed to style code", iae);
+        }
         codeArea.setComponentPopupMenu(createEditorPopup());
         codeArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                onCodeChange();
+                onCodeChange(e);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                onCodeChange();
+                onCodeChange(e);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                onCodeChange();
+                //onCodeChange(e);
             }
         });
 
@@ -404,8 +420,7 @@ public class MainForm implements Machine.MachineListener {
                 codeArea.setText(sb.toString().trim());
                 log.fine("have loaded from file");
             } catch (Exception ex) {
-                log.throwing(MainForm.class.toString(), "load", ex);
-                log.warning("Failed to load from file.");
+                log.log(Level.WARNING, "Failed to load from file.", ex);
                 JOptionPane.showMessageDialog(contentPanel, res.getString("filechooser.load.fail.msg"),
                         res.getString("filechooser.load.fail.title"), JOptionPane.ERROR_MESSAGE);
             }
@@ -425,8 +440,7 @@ public class MainForm implements Machine.MachineListener {
             fw.flush();
             log.fine("have saved into file");
         } catch (Exception ex) {
-            log.throwing(MainForm.class.toString(), "save", ex);
-            log.warning("Failed to save into file.");
+            log.log(Level.WARNING, "Failed to save into file.", ex);
             JOptionPane.showMessageDialog(contentPanel, res.getString("filechooser.save.fail.msg"),
                     res.getString("filechooser.save.fail.title"), JOptionPane.ERROR_MESSAGE);
         }
@@ -476,7 +490,19 @@ public class MainForm implements Machine.MachineListener {
         machine.pause();
     }
 
-    private void onCodeChange() {
+    private void onCodeChange(final DocumentEvent e) {
+        log.log(Level.FINER, "codeChange");
+        if (e.getDocument().equals(codeArea.getDocument())) try {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    log.log(Level.FINER, "codeStyleRun");
+                    CodeHelper.styleCodeAfterChange(e);
+                }
+            });
+        } catch (IllegalArgumentException iae) {
+            log.log(Level.WARNING, "Failed to style code", iae);
+        }
         final int DELAY = 1000;
         setStepRunEnabled(false);
         if (Prefs.getInstance().getLifeCompileEnabled()) {
@@ -515,7 +541,7 @@ public class MainForm implements Machine.MachineListener {
         try {
             undoManager.undo();
         } catch (CannotUndoException cue) {
-            log.throwing(MainForm.class.getName(), "undo", cue);
+            log.log(Level.WARNING, "Failed to undo", cue);
         }
         checkUndoEnabled();
     }
@@ -523,7 +549,7 @@ public class MainForm implements Machine.MachineListener {
         try {
             undoManager.redo();
         } catch (CannotRedoException cre) {
-            log.throwing(MainForm.class.getName(), "redo", cre);
+            log.log(Level.WARNING, "Failed to redo", cre);
         }
         checkUndoEnabled();
     }
@@ -540,7 +566,7 @@ public class MainForm implements Machine.MachineListener {
     //Machine listener
     @Override
     public void onLogMessage(Machine machine, LogMessage msg) {
-        log.fine(msg.getCategory().toString() + ": " + msg.getMessage());
+        log.finer(msg.getCategory().toString() + ": " + msg.getMessage());
         /*String surrounding;
         switch (msg.getCategory()) {
             case DEBUG:

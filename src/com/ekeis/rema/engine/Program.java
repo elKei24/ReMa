@@ -152,9 +152,11 @@ public class Program {
             int lineNrOld;
             try {
                 lineNrOld = Integer.valueOf(firstPart.substring(0, firstPart.length() - 1));
-                assert lineNrOld > 0;
             } catch (NumberFormatException | AssertionError e) {
                 break hasNumberCheck;
+            }
+            if (lineNrOld < 0) {
+                throw new MissingLineNumberException(line);
             }
             //nicht abgebrochen, also Zeilennummer da → löschen
             return new Pair<>(lineNrOld, rest);
