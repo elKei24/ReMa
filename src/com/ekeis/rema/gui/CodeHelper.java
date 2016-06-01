@@ -28,7 +28,6 @@ public class CodeHelper {
     private static final String STYLE_DEFAULT = "defaultStyle";
     private static final String STYLE_COMMENT = "comment";
     private static final String STYLE_LINENR = "lineNr";
-    private static final String STYLE_COMMAND = "command";
     private static final String STYLE_CURRENT_LINE = "currentLine";
 
     public static String updateLineNumbers(String code) {
@@ -65,8 +64,11 @@ public class CodeHelper {
         return codeNew.trim();
     }
 
+    public static void styleCodeDefault(StyledDocument document) {
+        document.setCharacterAttributes(0, document.getLength(), styleContext.getStyle(STYLE_DEFAULT), true);
+    }
     public static void styleCode(StyledDocument document, int currentLine) {
-        styleCode((StyledDocument) document, 0, document.getLength() - 1, currentLine);
+        styleCode(document, 0, document.getLength() - 1, currentLine);
     }
     public static void styleCodeAfterChange(DocumentEvent e, int currentLine) throws IllegalArgumentException {
         if (e.getDocument() == null || !(e.getDocument() instanceof StyledDocument)) {
@@ -173,10 +175,6 @@ public class CodeHelper {
         //linenr style
         Style linenrStyle = c.addStyle(STYLE_LINENR, defaultStyle);
         StyleConstants.setForeground(linenrStyle, Color.getHSBColor((float) 25.0 / 360, (float) 1, (float) 0.8));
-
-        //command style
-        Style commandStyle = c.addStyle(STYLE_COMMAND, defaultStyle);
-        StyleConstants.setForeground(commandStyle, Color.BLUE);
 
         return c;
     }

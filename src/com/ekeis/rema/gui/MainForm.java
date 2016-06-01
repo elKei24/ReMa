@@ -63,6 +63,7 @@ public class MainForm implements Machine.MachineListener {
     private boolean compilationScheduled;
 
     private int curLine = -1;
+    private boolean styleCode = Prefs.getInstance().getStyleCode();
 
 
     public MainForm() {
@@ -109,7 +110,7 @@ public class MainForm implements Machine.MachineListener {
             log.log(Level.SEVERE, "Failed to change codeArea document", e);
         }
 
-        CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
+        if (styleCode) CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
         codeArea.setComponentPopupMenu(createEditorPopup());
         codeArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -254,13 +255,7 @@ public class MainForm implements Machine.MachineListener {
         JMenuItem menuFileSettings = fileMenu.add(new UIAction(res.getString("menu.file.settings")) {
             @Override
             public void actionPerformed(ActionEvent e) {
-                SettingsDialog dialog = new SettingsDialog();
-                dialog.pack();
-                dialog.setVisible(true);
-                if (dialog.getResult() == SettingsDialog.Result.OK) {
-                    reset();
-                    machine.setNumRegisters(Prefs.getInstance().getNumberRegisters());
-                }
+                showSettings();
             }
         });
         menuFileSettings.setMnemonic(menuFileSettings.getText().charAt(0));
@@ -408,6 +403,23 @@ public class MainForm implements Machine.MachineListener {
         menuHelpAbout.setMnemonic(menuHelpAbout.getText().charAt(0));
     }
 
+    private void showSettings() {
+        SettingsDialog dialog = new SettingsDialog();
+        dialog.pack();
+        dialog.setVisible(true);
+        if (dialog.getResult() == SettingsDialog.Result.OK) {
+            reset();
+            Prefs prefs = Prefs.getInstance();
+            machine.setNumRegisters(prefs.getNumberRegisters());
+            styleCode = prefs.getStyleCode();
+            if (styleCode) {
+                CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
+            } else {
+                CodeHelper.styleCodeDefault(codeArea.getStyledDocument());
+            }
+        }
+    }
+
     private void load() {
         if (JFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(contentPanel)) {
             menuFileSave.setEnabled(true);
@@ -499,7 +511,7 @@ public class MainForm implements Machine.MachineListener {
                 @Override
                 public void run() {
                     log.log(Level.FINER, "codeStyleRun");
-                    CodeHelper.styleCodeAfterChange(e, curLine);
+                    if (styleCode) CodeHelper.styleCodeAfterChange(e, curLine);
                 }
             });
         } catch (IllegalArgumentException iae) {
@@ -610,7 +622,7 @@ public class MainForm implements Machine.MachineListener {
                     @Override
                     public void run() {
                         curLine = (int) e.getOldVal();
-                        CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
+                        if (styleCode) CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
                     }
                 });
             }
@@ -622,7 +634,7 @@ public class MainForm implements Machine.MachineListener {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
+                if (styleCode) CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
             }
         });
     }

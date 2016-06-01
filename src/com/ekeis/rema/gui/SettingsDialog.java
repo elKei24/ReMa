@@ -23,6 +23,7 @@ public class SettingsDialog extends JDialog {
     private JSpinner maxValueSpinner;
     private JSpinner minValueSpinner;
     private JCheckBox lifeCompilationCheck;
+    private JCheckBox syntaxHighlightingCheck;
     private SpinnerNumberModel minValModel, maxValModel;
 
     private Result result = Result.NONE;
@@ -99,19 +100,24 @@ public class SettingsDialog extends JDialog {
     }
 
     private void load() {
-        registersSpinner.setModel(new SpinnerNumberModel(Prefs.getInstance().getNumberRegisters(), 3, 200, 1));
+        Prefs prefs = Prefs.getInstance();
+        registersSpinner.setModel(new SpinnerNumberModel(prefs.getNumberRegisters(), 3, 200, 1));
 
-        maxValModel.setValue((double) Prefs.getInstance().getRegisterMax());
-        minValModel.setValue((double) Prefs.getInstance().getRegisterMin());
+        maxValModel.setValue((double) prefs.getRegisterMax());
+        minValModel.setValue((double) prefs.getRegisterMin());
 
-        lifeCompilationCheck.setSelected(Prefs.getInstance().getLifeCompileEnabled());
+        lifeCompilationCheck.setSelected(prefs.getLifeCompileEnabled());
+        syntaxHighlightingCheck.setSelected(prefs.getStyleCode());
     }
 
     private void store() {
-        Prefs.getInstance().setNumberRegisters((int) registersSpinner.getValue());
-        Prefs.getInstance().setRegisterMin((long)(double) minValModel.getValue());
-        Prefs.getInstance().setRegisterMax((long)(double) maxValModel.getValue());
-        Prefs.getInstance().setLifeCompileEnabled(lifeCompilationCheck.isSelected());
+        Prefs prefs = Prefs.getInstance();
+        prefs.setNumberRegisters((int) registersSpinner.getValue());
+        prefs.setRegisterMin((long)(double) minValModel.getValue());
+        prefs.setRegisterMax((long)(double) maxValModel.getValue());
+        prefs.setLifeCompileEnabled(lifeCompilationCheck.isSelected());
+        prefs.setStyleCode(syntaxHighlightingCheck.isSelected());
+        prefs.sync();
     }
 
     public Result getResult() {

@@ -19,6 +19,7 @@ public class Prefs {
     private static final String KEY_REGISTER_MAX = PREF_SETTINGS + "registerMax";
     private static final String KEY_REGISTER_MIN = PREF_SETTINGS + "registerMin";
     private static final String KEY_LIFE_COMPILE = PREF_SETTINGS + "lifeCompilation";
+    private static final String KEY_STYLE_CODE = PREF_SETTINGS + "styleCode";
     private static final String KEY_IGNORE_AUTOLINES = "ignoreAutolinesWarning";
 
     private static final Prefs instance = new Prefs();
@@ -36,7 +37,7 @@ public class Prefs {
         }
     }
 
-    private void sync() {
+    public void sync() {
         try {
             prefs.sync();
         } catch (BackingStoreException e) {
@@ -50,21 +51,18 @@ public class Prefs {
     }
     public void setNumberRegisters(int val) {
         prefs.putInt(KEY_REGISTERS, val);
-        sync();
     }
     public long getRegisterMax() {
         return prefs.getLong(KEY_REGISTER_MAX, Integer.MAX_VALUE);
     }
     public void setRegisterMax(long val) {
         prefs.putLong(KEY_REGISTER_MAX, val);
-        sync();
     }
     public long getRegisterMin() {
         return prefs.getLong(KEY_REGISTER_MIN, Integer.MIN_VALUE);
     }
     public void setRegisterMin(long val) {
         prefs.putLong(KEY_REGISTER_MIN, val);
-        sync();
     }
     public boolean getIgnoreAutolinesWarning() {
         return prefs.getBoolean(KEY_IGNORE_AUTOLINES, false);
@@ -77,6 +75,11 @@ public class Prefs {
     }
     public void setLifeCompileEnabled(boolean enabled) {
         prefs.putBoolean(KEY_LIFE_COMPILE, enabled);
-        sync();
+    }
+    public boolean getStyleCode() {
+        return prefs.getBoolean(KEY_STYLE_CODE, true);
+    }
+    public void setStyleCode(boolean enabled) {
+        prefs.putBoolean(KEY_STYLE_CODE, enabled);
     }
 }
