@@ -41,7 +41,7 @@ public class MainForm implements Machine.MachineListener {
     ResourceBundle resNoTranslation = ResourceBundle.getBundle("com/ekeis/rema/properties/NoTranslation");
 
     private JPanel contentPanel;
-    private JEditorPane codeArea;
+    private JTextPane codeArea;
     private JPanel registerOverview;
     private JMenuBar jMenuBar;
     private JButton buttonRun;
@@ -62,10 +62,13 @@ public class MainForm implements Machine.MachineListener {
     private LogTableModel logModel;
     private boolean compilationScheduled;
 
+    private int curLine = -1;
+
 
     public MainForm() {
         machine = new Machine();
         machine.addListener(this);
+        machine.setNumRegisters(Prefs.getInstance().getNumberRegisters());
 
         createJMenuBar();
         createFileChooser();
@@ -105,11 +108,8 @@ public class MainForm implements Machine.MachineListener {
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to change codeArea document", e);
         }
-        try {
-            CodeHelper.styleCode(codeArea.getDocument());
-        } catch (IllegalArgumentException iae) {
-            log.log(Level.WARNING, "Failed to style code", iae);
-        }
+
+        CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
         codeArea.setComponentPopupMenu(createEditorPopup());
         codeArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -259,6 +259,7 @@ public class MainForm implements Machine.MachineListener {
                 dialog.setVisible(true);
                 if (dialog.getResult() == SettingsDialog.Result.OK) {
                     reset();
+                    machine.setNumRegisters(Prefs.getInstance().getNumberRegisters());
                 }
             }
         });
@@ -482,6 +483,7 @@ public class MainForm implements Machine.MachineListener {
         machine.step();
     }
     private void reset() {
+        curLine = -1;
         logModel.clear();
         machine.reset();
         machine.setProgram(codeArea.getText());
@@ -497,7 +499,7 @@ public class MainForm implements Machine.MachineListener {
                 @Override
                 public void run() {
                     log.log(Level.FINER, "codeStyleRun");
-                    CodeHelper.styleCodeAfterChange(e);
+                    CodeHelper.styleCodeAfterChange(e, curLine);
                 }
             });
         } catch (IllegalArgumentException iae) {
@@ -559,7 +561,8 @@ public class MainForm implements Machine.MachineListener {
         frame.setContentPane(contentPanel);
         frame.setJMenuBar(jMenuBar);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setPreferredSize(new Dimension(500, 600));
+        frame.setPreferredSize(new Dimension(640, 640));
+        frame.setMinimumSize(new Dimension(450, 360));
         return frame;
     }
 
@@ -597,8 +600,31 @@ public class MainForm implements Machine.MachineListener {
     }
 
     @Override
-    public void onRegistersChanged(Machine machine) {
+    public void onRegistersChanged(final Machine machine) {
         createRegisters();
+
+        machine.getCounter().addListener(new Register.RegisterListener() {
+            @Override
+            public void onValueSet(final RegisterValueSetEvent e) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        curLine = (int) e.getOldVal();
+                        CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    public void onReset(final Machine machine) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
+            }
+        });
     }
 
     //Registers
@@ -616,7 +642,7 @@ public class MainForm implements Machine.MachineListener {
                 for (int i = 0; i < registers.size(); i++) {
                     Register r = registers.get(i);
                     if (r != null) {
-                        registerOverview.add(new RegisterGui(r, String.format(res.getString("overview.register"), i + 1)));
+                        registerOverview.add(new RegisterGui(r, String.format(res.getString("overview.register"), i)));
                     }
                 }
                 registerScrollPane.validate();

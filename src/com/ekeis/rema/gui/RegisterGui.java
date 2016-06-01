@@ -34,7 +34,12 @@ public class RegisterGui extends JPanel implements Register.RegisterListener {
     }
 
     @Override
-    public void onValueSet(RegisterValueSetEvent e) {
-        setValue(e.getNewVal());
+    public void onValueSet(final RegisterValueSetEvent e) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                setValue(e.getNewVal());
+            }
+        });
     }
 }

@@ -65,16 +65,10 @@ public class CodeHelper {
         return codeNew.trim();
     }
 
-    public static void styleCode(Document document) throws IllegalArgumentException {
-        if (document == null || !(document instanceof StyledDocument)) {
-            throw new IllegalArgumentException("Document must be a StyledDocument");
-        }
-        styleCode((StyledDocument) document, 0, document.getLength() - 1);
+    public static void styleCode(StyledDocument document, int currentLine) {
+        styleCode((StyledDocument) document, 0, document.getLength() - 1, currentLine);
     }
-    public static void styleCodeCurrentLine(int lineOld, int lineNew) {
-
-    }
-    public static void styleCodeAfterChange(DocumentEvent e) throws IllegalArgumentException {
+    public static void styleCodeAfterChange(DocumentEvent e, int currentLine) throws IllegalArgumentException {
         if (e.getDocument() == null || !(e.getDocument() instanceof StyledDocument)) {
             throw new IllegalArgumentException("Document must be a StyledDocument");
         }
@@ -84,9 +78,9 @@ public class CodeHelper {
         int end = e.getLength() + start;
 
         //stlye
-        styleCode(doc, start, end);
+        styleCode(doc, start, end, currentLine);
     }
-    protected static void styleCode(StyledDocument doc, int start, int end) {
+    protected static void styleCode(StyledDocument doc, int start, int end, int currentLine) {
         if (start > end) return;
         String code;
         try {
@@ -115,13 +109,13 @@ public class CodeHelper {
             int lineEnd = code.indexOf('\n', lineStart + 1);
             if (lineEnd > end || lineEnd < 0) lineEnd = end;
 
-            styleCodeLine(doc, lineStart, lineEnd);
+            styleCodeLine(doc, lineStart, lineEnd, currentLine);
 
             lineStart = lineEnd;
             while (lineStart < end && code.charAt(lineStart) == '\n') lineStart++;
         }
     }
-    protected static void styleCodeLine(StyledDocument doc, int startLine, int endLine) {
+    protected static void styleCodeLine(StyledDocument doc, int startLine, int endLine, int currentLine) {
         String code;
         try {
             code = doc.getText(0, doc.getLength());
@@ -131,16 +125,33 @@ public class CodeHelper {
         }
 
         String line = code.substring(startLine, endLine);
-        log.log(Level.FINER, "styling line: " + line);
 
         //reset style for whole liine
         doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_DEFAULT), true);
 
         //style parts
         if (Program.isCommentLine(line)) {
+            //comment styling
             doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_COMMENT), false);
         } else {
 
+            //lineNr styling
+            int lineNr;
+            try {
+                lineNr = Program.cutLineNumber(line).getKey();
+            } catch (SyntaxException se) {
+                lineNr = -1;
+            }
+            if (lineNr > 0) {
+                //lineNr itsself
+                int lineNrPos = line.indexOf(':');
+                doc.setCharacterAttributes(startLine, lineNrPos + 1, styleContext.getStyle(STYLE_LINENR), false);
+
+                //current line
+                if (lineNr == currentLine) {
+                    doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_CURRENT_LINE), false);
+                }
+            }
         }
     }
 
@@ -157,11 +168,11 @@ public class CodeHelper {
 
         //current line style
         Style currentLineStyle = c.addStyle(STYLE_CURRENT_LINE, defaultStyle);
-        StyleConstants.setBackground(currentLineStyle, Color.yellow);
+        StyleConstants.setBackground(currentLineStyle, Color.getHSBColor((float) 50.0/360, (float) 0.5, (float) 1.0));
 
         //linenr style
         Style linenrStyle = c.addStyle(STYLE_LINENR, defaultStyle);
-        StyleConstants.setForeground(linenrStyle, Color.DARK_GRAY);
+        StyleConstants.setForeground(linenrStyle, Color.getHSBColor((float) 25.0 / 360, (float) 1, (float) 0.8));
 
         //command style
         Style commandStyle = c.addStyle(STYLE_COMMAND, defaultStyle);

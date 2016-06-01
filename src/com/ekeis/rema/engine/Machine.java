@@ -9,7 +9,6 @@ import com.ekeis.rema.engine.exceptions.RemaException;
 import com.ekeis.rema.engine.exceptions.runtime.RegisterNotFoundException;
 import com.ekeis.rema.engine.exceptions.syntax.SyntaxException;
 import com.ekeis.rema.engine.log.LogMessage;
-import com.ekeis.rema.prefs.Prefs;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -35,6 +34,11 @@ public class Machine {
     private boolean running, isEnd;
 
     public Machine() {
+        setNumRegisters(0);
+        reset();
+    }
+    public Machine(int numRegisters) {
+        setNumRegisters(numRegisters);
         reset();
     }
 
@@ -44,16 +48,13 @@ public class Machine {
         setRunning(false);
         isEnd = false;
 
-        counter = new Register(1);
-        akku = new Register(0);
-
-        int numRegisters = Prefs.getInstance().getNumberRegisters();
-        registers = new ArrayList<>(numRegisters);
-        for (int i = 0; i < numRegisters; i++) {
-            Register r = new Register();
-            registers.add(r);
+        counter.setValue(1);
+        akku.setValue(0);
+        for (Register r : registers) {
+            r.setValue(0);
         }
-        for (MachineListener l : new ArrayList<>(listeners)) l.onRegistersChanged(this);
+
+        for (MachineListener l : new ArrayList<>(listeners)) l.onReset(this);
     }
 
     public void step() {
@@ -82,7 +83,7 @@ public class Machine {
                     while (!isEnd && running) {
                         stepThreadsafe();
                         try {
-                            Thread.sleep(50);
+                            Thread.sleep(20);
                         } catch (InterruptedException e) {
                         }
                     }
@@ -119,7 +120,7 @@ public class Machine {
 
     public Register getRegister(int curLine, int regIndex) {
         try {
-            return registers.get(regIndex - 1);
+            return registers.get(regIndex);
         } catch (IndexOutOfBoundsException ioobe) {
             throw new RegisterNotFoundException(curLine, regIndex);
         }
@@ -174,9 +175,17 @@ public class Machine {
             for (MachineListener l : new ArrayList<>(listeners)) l.onRunningChanged(this, running);
         }
     }
-
     public boolean isEnd() {
         return isEnd;
+    }
+    public void setNumRegisters(int numRegisters) {
+        counter = new Register(1);
+        akku = new Register(0);registers = new ArrayList<>(numRegisters);
+        for (int i = 0; i < numRegisters; i++) {
+            Register r = new Register();
+            registers.add(r);
+        }
+        for (MachineListener l : new ArrayList<>(listeners)) l.onRegistersChanged(this);
     }
 
     //listener
@@ -185,6 +194,7 @@ public class Machine {
         void onCompileTried(Machine machine, boolean success);
         void onRunningChanged(Machine machine, boolean running);
         void onRegistersChanged(Machine machine);
+        void onReset(Machine machine);
     }
     public void addListener(MachineListener l) {
         listeners.add(l);
