@@ -21,7 +21,11 @@ public class Prefs {
     private static final String KEY_LIFE_COMPILE = PREF_SETTINGS + "lifeCompilation";
     private static final String KEY_STYLE_CODE = PREF_SETTINGS + "styleCode";
     private static final String KEY_RUN_WAIT = PREF_SETTINGS + "waitMs";
+    private static final String KEY_NUMBERREPRESENTATION = PREF_SETTINGS + "numberRepresentation";
     private static final String KEY_IGNORE_AUTOLINES = "ignoreAutolinesWarning";
+
+    public static final byte NUMBERREPRSENTATION_DECIMAL = 0;
+    public static final byte NUMBERREPRSENTATION_BINARY = 1;
 
     private static final Prefs instance = new Prefs();
     public static Prefs getInstance() {return instance;}
@@ -54,13 +58,13 @@ public class Prefs {
         prefs.putInt(KEY_REGISTERS, val);
     }
     public long getRegisterMax() {
-        return prefs.getLong(KEY_REGISTER_MAX, Integer.MAX_VALUE);
+        return prefs.getLong(KEY_REGISTER_MAX, Long.MAX_VALUE - 1);
     }
     public void setRegisterMax(long val) {
         prefs.putLong(KEY_REGISTER_MAX, val);
     }
     public long getRegisterMin() {
-        return prefs.getLong(KEY_REGISTER_MIN, Integer.MIN_VALUE);
+        return prefs.getLong(KEY_REGISTER_MIN, Long.MIN_VALUE + 1);
     }
     public void setRegisterMin(long val) {
         prefs.putLong(KEY_REGISTER_MIN, val);
@@ -88,5 +92,11 @@ public class Prefs {
     }
     public void setRunWaittime(long ms) {
         prefs.putLong(KEY_RUN_WAIT, ms);
+    }
+    public byte getNumberRepresentation() {
+        return (byte) prefs.getInt(KEY_NUMBERREPRESENTATION, NUMBERREPRSENTATION_DECIMAL);
+    }
+    public void setNumberRepresentation(byte repr) {
+        prefs.putLong(KEY_NUMBERREPRESENTATION, repr);
     }
 }

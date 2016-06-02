@@ -10,44 +10,45 @@ import com.ekeis.rema.engine.Register;
 /**
  * @author Elias Keis (31.05.2016)
  */
-public class BitviseCommand extends Command {
+public class Bitwise2Command extends Command {
 
-    public enum Type {NOT, ASL, ASR, LSR};
+    public enum Type {OR, AND, XOR};
 
     private Type type;
+    private int register;
 
-    public BitviseCommand(Machine machine, int line, Type type) {
+    public Bitwise2Command(Machine machine, int line, int register, Type type) {
         super(machine, line);
         this.type = type;
+        this.register = register;
     }
 
     @Override
     public void perform() {
         Register Ra = machine.getAkku();
+        Register Rx = machine.getRegister(index, register);
         long a = Ra.getValue();
+        long aOld = a;
+        long b = Rx.getValue();
         String msg;
         switch (type) {
-            case NOT:
-                a = ~a;
-                msg = "bitvise.not";
+            case OR:
+                a |= b;
+                msg = "bitwise.or";
                 break;
-            case LSR:
-                a >>>= 1;
-                msg = "bitvise.lsr";
+            case XOR:
+                a ^= b;
+                msg = "bitwise.xor";
                 break;
-            case ASR:
-                a >>= 1;
-                msg = "bitvise.asr";
-                break;
-            case ASL:
-                a <<= 1;
-                msg = "bitvise.asl";
+            case AND:
+                a &= b;
+                msg = "bitwise.and";
                 break;
             default:
                 throw new UnsupportedOperationException("No action for the given type defined");
         }
         Ra.setValue(a);
         machine.increaseIP();
-        logExecution(msg);
+        logExecution(msg, Long.toBinaryString(aOld), Long.toBinaryString(b), register);
     }
 }

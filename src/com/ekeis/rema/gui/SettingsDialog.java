@@ -25,6 +25,8 @@ public class SettingsDialog extends JDialog {
     private JCheckBox lifeCompilationCheck;
     private JCheckBox syntaxHighlightingCheck;
     private JSpinner runWaitSpinner;
+    private JRadioButton decimalRadioButton;
+    private JRadioButton binaryRadioButton;
     private SpinnerNumberModel minValModel, maxValModel;
 
     private Result result = Result.NONE;
@@ -111,6 +113,10 @@ public class SettingsDialog extends JDialog {
         syntaxHighlightingCheck.setSelected(prefs.getStyleCode());
 
         runWaitSpinner.setModel(new SpinnerNumberModel((int) prefs.getRunWaittime(), 0, 5000, 1));
+
+        byte repr = prefs.getNumberRepresentation();
+        decimalRadioButton.setSelected(repr == Prefs.NUMBERREPRSENTATION_DECIMAL);
+        binaryRadioButton.setSelected(repr == Prefs.NUMBERREPRSENTATION_BINARY);
     }
 
     private void store() {
@@ -121,6 +127,8 @@ public class SettingsDialog extends JDialog {
         prefs.setLifeCompileEnabled(lifeCompilationCheck.isSelected());
         prefs.setStyleCode(syntaxHighlightingCheck.isSelected());
         prefs.setRunWaittime((int) runWaitSpinner.getValue());
+        prefs.setNumberRepresentation(binaryRadioButton.isSelected() ?
+                Prefs.NUMBERREPRSENTATION_BINARY : Prefs.NUMBERREPRSENTATION_DECIMAL);
         prefs.sync();
     }
 

@@ -10,48 +10,45 @@ import com.ekeis.rema.engine.Register;
 /**
  * @author Elias Keis (31.05.2016)
  */
-public class ArithmeticCommand extends Command {
+public class BitwiseCommand extends Command {
 
-    public enum Type {ADD, SUB, MULT, DIV};
+    public enum Type {NOT, ASL, ASR, LSR};
 
     private Type type;
-    private int register;
 
-    public ArithmeticCommand(Machine machine, int line, int register, Type type) {
+    public BitwiseCommand(Machine machine, int line, Type type) {
         super(machine, line);
         this.type = type;
-        this.register = register;
     }
 
     @Override
     public void perform() {
         Register Ra = machine.getAkku();
-        Register Rx = machine.getRegister(index, register);
         long a = Ra.getValue();
-        long b = Rx.getValue();
+        long aOld = a;
         String msg;
         switch (type) {
-            case ADD:
-                a+=b;
-                msg = "arithmetic.add";
+            case NOT:
+                a = ~a;
+                msg = "bitwise.not";
                 break;
-            case SUB:
-                a-=b;
-                msg = "arithmetic.sub";
+            case LSR:
+                a >>>= 1;
+                msg = "bitwise.lsr";
                 break;
-            case MULT:
-                a*=b;
-                msg = "arithmetic.mult";
+            case ASR:
+                a >>= 1;
+                msg = "bitwise.asr";
                 break;
-            case DIV:
-                a/=b;
-                msg = "arithmetic.div";
+            case ASL:
+                a <<= 1;
+                msg = "bitwise.asl";
                 break;
             default:
                 throw new UnsupportedOperationException("No action for the given type defined");
         }
         Ra.setValue(a);
         machine.increaseIP();
-        logExecution(msg, b, register);
+        logExecution(msg, Long.toBinaryString(aOld));
     }
 }

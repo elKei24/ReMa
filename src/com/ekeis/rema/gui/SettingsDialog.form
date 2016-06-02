@@ -83,7 +83,7 @@
                       <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="settings.lifecompile"/>
                     </properties>
                   </component>
-                  <grid id="8361d" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="8361d" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -115,6 +115,7 @@
                         <properties>
                           <labelFor value="4c29a"/>
                           <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="settings.registers.max"/>
+                          <visible value="false"/>
                         </properties>
                       </component>
                       <component id="4c29a" class="javax.swing.JSpinner" binding="maxValueSpinner" default-binding="true">
@@ -123,6 +124,7 @@
                         </constraints>
                         <properties>
                           <toolTipText resource-bundle="com/ekeis/rema/properties/GUIBundle" key="settings.registers.max.tooltip"/>
+                          <visible value="false"/>
                         </properties>
                       </component>
                       <component id="34b85" class="javax.swing.JLabel">
@@ -132,6 +134,7 @@
                         <properties>
                           <labelFor value="568d4"/>
                           <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="settings.registers.min"/>
+                          <visible value="false"/>
                         </properties>
                       </component>
                       <component id="568d4" class="javax.swing.JSpinner" binding="minValueSpinner" default-binding="true">
@@ -140,6 +143,41 @@
                         </constraints>
                         <properties>
                           <toolTipText resource-bundle="com/ekeis/rema/properties/GUIBundle" key="settings.registers.min.tooltip"/>
+                          <visible value="false"/>
+                        </properties>
+                      </component>
+                      <grid id="78b8" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
+                        <constraints>
+                          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                        <border type="none"/>
+                        <children>
+                          <component id="fd85e" class="javax.swing.JRadioButton" binding="decimalRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="settings.numberRepresentation.decimal"/>
+                            </properties>
+                          </component>
+                          <component id="a438c" class="javax.swing.JRadioButton" binding="binaryRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="settings.numberRepresentation.binary"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <component id="f3341" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="settings.numberRepresentation"/>
                         </properties>
                       </component>
                     </children>
@@ -195,4 +233,10 @@
       </grid>
     </children>
   </grid>
+  <buttonGroups>
+    <group name="buttonGroup1">
+      <member id="a438c"/>
+      <member id="fd85e"/>
+    </group>
+  </buttonGroups>
 </form>

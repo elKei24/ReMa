@@ -31,7 +31,7 @@ public class Register {
     public void setValue(long value) {
         long oldVal = value;
         boolean overflow = false;
-        if (value < min || value > max) overflow = true;
+        //OVERFLOWCHECK DISABLED!!!, if (value < min || value > max) overflow = true;
         if (overflow) {
             this.value = (value - min) % (max - min) + min;
         } else {

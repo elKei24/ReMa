@@ -13,10 +13,14 @@ import java.awt.*;
  * @author Elias Keis (31.05.2016)
  */
 public class RegisterGui extends JPanel implements Register.RegisterListener {
+    public enum NumberRepresentation {DECIMAL, BINARY};
+
     Register register;
     JLabel valueLabel = new JLabel();
+    NumberRepresentation repr;
 
-    public RegisterGui(Register register, String label) {
+    public RegisterGui(Register register, String label, NumberRepresentation repr) {
+        this.repr = repr;
         this.register = register;
         register.addListener(this);
         setValue(register.getValue());
@@ -30,7 +34,15 @@ public class RegisterGui extends JPanel implements Register.RegisterListener {
     }
 
     private void setValue(long value) {
-        valueLabel.setText(String.format("%d", value));
+        String txt;
+        switch (repr){
+            case BINARY:
+                txt = Long.toBinaryString(value);
+                break;
+            default:
+                txt = String.format("%d", value);
+        }
+        valueLabel.setText(txt);
     }
 
     @Override

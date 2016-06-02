@@ -419,16 +419,34 @@ public class MainForm implements Machine.MachineListener {
             @Override
             public void run() {
                 log.finer("creating registers");
+
+                //clear
                 registerOverview.removeAll();
                 registerOverviewVIP.removeAll();
-                registerOverviewVIP.add(new RegisterGui(machine.getAkku(), res.getString("overview.akku")), BorderLayout.WEST);
-                registerOverviewVIP.add(new RegisterGui(machine.getCounter(), res.getString("overview.ip")), BorderLayout.EAST);
 
+                //find representation
+                RegisterGui.NumberRepresentation repr;
+                switch (Prefs.getInstance().getNumberRepresentation()) {
+                    case Prefs.NUMBERREPRSENTATION_BINARY:
+                        repr = RegisterGui.NumberRepresentation.BINARY;
+                        break;
+                    default:
+                        repr = RegisterGui.NumberRepresentation.DECIMAL;
+                        break;
+                }
+
+                //add VIPs
+                registerOverviewVIP.add(new RegisterGui(machine.getAkku(), res.getString("overview.akku"), repr),
+                        BorderLayout.WEST);
+                registerOverviewVIP.add(new RegisterGui(machine.getCounter(), res.getString("overview.ip"), repr),
+                        BorderLayout.EAST);
+
+                //add rest
                 List<Register> registers = machine.getRegisters();
                 for (int i = 0; i < registers.size(); i++) {
                     Register r = registers.get(i);
                     if (r != null) {
-                        registerOverview.add(new RegisterGui(r, String.format(res.getString("overview.register"), i)));
+                        registerOverview.add(new RegisterGui(r, String.format(res.getString("overview.register"), i), repr));
                     }
                 }
                 registerScrollPane.validate();

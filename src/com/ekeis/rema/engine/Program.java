@@ -77,33 +77,33 @@ public class Program {
         try {
             switch (cmd) {
                 case "DLOAD":
-                    return new DloadCommand(machine, lineNr, Long.decode(parts.get(1)));
+                    return new DloadCommand(machine, lineNr, getLong(parts.get(1)));
                 case "LOAD":
-                    return new TransportCommand(machine, lineNr, Integer.decode(parts.get(1)), TransportCommand.Type.LOAD);
+                    return new TransportCommand(machine, lineNr, (int) getLong(parts.get(1)), TransportCommand.Type.LOAD);
                 case "STORE":
-                    return new TransportCommand(machine, lineNr, Integer.decode(parts.get(1)), TransportCommand.Type.STORE);
+                    return new TransportCommand(machine, lineNr, (int) getLong(parts.get(1)), TransportCommand.Type.STORE);
                 case "ADD":
-                    return new ArithmeticCommand(machine, lineNr, Integer.decode(parts.get(1)), ArithmeticCommand.Type.ADD);
+                    return new ArithmeticCommand(machine, lineNr, (int) getLong(parts.get(1)), ArithmeticCommand.Type.ADD);
                 case "SUB":
-                    return new ArithmeticCommand(machine, lineNr, Integer.decode(parts.get(1)), ArithmeticCommand.Type.SUB);
+                    return new ArithmeticCommand(machine, lineNr, (int) getLong(parts.get(1)), ArithmeticCommand.Type.SUB);
                 case "MULT":
-                    return new ArithmeticCommand(machine, lineNr, Integer.decode(parts.get(1)), ArithmeticCommand.Type.MULT);
+                    return new ArithmeticCommand(machine, lineNr, (int) getLong(parts.get(1)), ArithmeticCommand.Type.MULT);
                 case "DIV":
-                    return new ArithmeticCommand(machine, lineNr, Integer.decode(parts.get(1)), ArithmeticCommand.Type.DIV);
+                    return new ArithmeticCommand(machine, lineNr, (int) getLong(parts.get(1)), ArithmeticCommand.Type.DIV);
                 case "JUMP":
-                    return new JumpCommand(machine, lineNr, Integer.decode(parts.get(1)), JumpCommand.Type.JUMP);
+                    return new JumpCommand(machine, lineNr, getLong(parts.get(1)), JumpCommand.Type.JUMP);
                 case "JEQ":
-                    return new JumpCommand(machine, lineNr, Integer.decode(parts.get(1)), JumpCommand.Type.JEQ);
+                    return new JumpCommand(machine, lineNr, getLong(parts.get(1)), JumpCommand.Type.JEQ);
                 case "JNE":
-                    return new JumpCommand(machine, lineNr, Integer.decode(parts.get(1)), JumpCommand.Type.JNE);
+                    return new JumpCommand(machine, lineNr, getLong(parts.get(1)), JumpCommand.Type.JNE);
                 case "JLE":
-                    return new JumpCommand(machine, lineNr, Integer.decode(parts.get(1)), JumpCommand.Type.JLE);
+                    return new JumpCommand(machine, lineNr, getLong(parts.get(1)), JumpCommand.Type.JLE);
                 case "JLT":
-                    return new JumpCommand(machine, lineNr, Integer.decode(parts.get(1)), JumpCommand.Type.JLT);
+                    return new JumpCommand(machine, lineNr, getLong(parts.get(1)), JumpCommand.Type.JLT);
                 case "JGE":
-                    return new JumpCommand(machine, lineNr, Integer.decode(parts.get(1)), JumpCommand.Type.JGE);
+                    return new JumpCommand(machine, lineNr, getLong(parts.get(1)), JumpCommand.Type.JGE);
                 case "JGT":
-                    return new JumpCommand(machine, lineNr, Integer.decode(parts.get(1)), JumpCommand.Type.JGT);
+                    return new JumpCommand(machine, lineNr, getLong(parts.get(1)), JumpCommand.Type.JGT);
                 case "END":
                     return new EndCommand(machine, lineNr, EndCommand.Type.END);
                 case "PAUSE":
@@ -114,6 +114,20 @@ public class Program {
                         if (part != null && !part.trim().isEmpty()) partsTwo.add(part.trim());
                     }
                     return new LogCommand(machine, lineNr, partsTwo.get(1));
+                case "NOT":
+                    return new BitwiseCommand(machine, lineNr, BitwiseCommand.Type.NOT);
+                case "ASL":
+                    return new BitwiseCommand(machine, lineNr, BitwiseCommand.Type.ASL);
+                case "ASR":
+                    return new BitwiseCommand(machine, lineNr, BitwiseCommand.Type.ASR);
+                case "LSR":
+                    return new BitwiseCommand(machine, lineNr, BitwiseCommand.Type.LSR);
+                case "AND":
+                    return new Bitwise2Command(machine, lineNr, (int) getLong(parts.get(1)), Bitwise2Command.Type.AND);
+                case "OR":
+                    return new Bitwise2Command(machine, lineNr, (int) getLong(parts.get(1)), Bitwise2Command.Type.OR);
+                case "XOR":
+                    return new Bitwise2Command(machine, lineNr, (int) getLong(parts.get(1)), Bitwise2Command.Type.XOR);
                 default:
                     throw new UnknownCommandException(cmd, lineNr);
             }
@@ -125,6 +139,58 @@ public class Program {
     }
 
     //static stuff
+    public static long getLong(String part) {
+        try {
+            return Long.decode(part);
+        } catch (NumberFormatException nfe) {
+            //may be binary representation
+
+            int radix = 10;
+            int index = 0;
+            boolean negative = false;
+            Long result;
+
+            char firstChar = part.charAt(0);
+            boolean hadSign = false;
+            // Handle sign, if present
+            if (firstChar == '-') {
+                negative = true;
+                index++;
+                hadSign = true;
+            } else if (firstChar == '+') {
+                index++;
+                hadSign = true;
+            }
+
+            // Handle radix specifier, if present
+            if (part.startsWith("0b", index) || part.startsWith("0B", index)) {
+                index += 2;
+                radix = 2;
+            } else {
+                throw nfe;
+            }
+
+            if (part.startsWith("-", index) || part.startsWith("+", index)) {
+                if (hadSign) {
+                    throw new NumberFormatException("Second sign character");
+                }
+            }
+
+            try {
+                result = Long.valueOf(part.substring(index), radix);
+                result = negative ? Long.valueOf(-result.intValue()) : result;
+            } catch (NumberFormatException e) {
+                // If number is Integer.MIN_VALUE, we'll end up here. The next line
+                // handles this case, and causes any genuine format error to be
+                // rethrown.
+                String constant = negative ? ("-" + part.substring(index))
+                        : part.substring(index);
+                result = Long.valueOf(constant, radix);
+            }
+            return result;
+        }
+    }
+
     public static boolean isCommentLine(String line) {
         for (String commentPrefix : commentPrefixes) {
             if (line.startsWith(commentPrefix)) {
