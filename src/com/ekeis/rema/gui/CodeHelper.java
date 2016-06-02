@@ -136,6 +136,12 @@ public class CodeHelper {
             //comment styling
             doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_COMMENT), false);
         } else {
+            //again comment styling
+            int commentStart = Program.findCommentStart(line);
+            if (commentStart >= 0) {
+                doc.setCharacterAttributes(startLine + commentStart, endLine - startLine - commentStart,
+                        styleContext.getStyle(STYLE_COMMENT), false);
+            }
 
             //lineNr styling
             int lineNr;

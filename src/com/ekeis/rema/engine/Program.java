@@ -41,6 +41,8 @@ public class Program {
 
         lineFor: for (String line : code.trim().split("\n")) {
             if (line.isEmpty() | isCommentLine(line)) continue lineFor;
+            int commentStart = findCommentStart(line);
+            if (commentStart > 0) line = line.substring(0, commentStart);
             Pair<Integer, String> result = cutLineNumber(line);
             int lineNr = result.getKey();
             line = result.getValue();
@@ -131,6 +133,16 @@ public class Program {
         }
         return false;
     }
+
+    public static int findCommentStart(String line) {
+        int start = -1;
+        for (String prefix : commentPrefixes) {
+            int startThis = line.indexOf(prefix);
+            if (start < 0 || (startThis > 0 && startThis < start)) start = startThis;
+        }
+        return start;
+    }
+
     /**
      * Removes the line number from <code>line</code> and returns it
      * @param line the line with line number. Pass by reference, value will be changed!
