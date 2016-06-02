@@ -71,7 +71,7 @@ public class Machine {
             program.execute((int) counter.getValue());
         } catch (RemaException re) {
             log(re);
-            pause();
+            end();
         }
     }
     public synchronized void run() {
