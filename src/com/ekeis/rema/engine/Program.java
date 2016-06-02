@@ -79,17 +79,17 @@ public class Program {
                 case "DLOAD":
                     return new DloadCommand(machine, lineNr, getLong(parts.get(1)));
                 case "LOAD":
-                    return new TransportCommand(machine, lineNr, (int) getLong(parts.get(1)), TransportCommand.Type.LOAD);
+                    return new TransportCommand(machine, lineNr, Integer.valueOf(parts.get(1)), TransportCommand.Type.LOAD);
                 case "STORE":
-                    return new TransportCommand(machine, lineNr, (int) getLong(parts.get(1)), TransportCommand.Type.STORE);
+                    return new TransportCommand(machine, lineNr, Integer.valueOf(parts.get(1)), TransportCommand.Type.STORE);
                 case "ADD":
-                    return new ArithmeticCommand(machine, lineNr, (int) getLong(parts.get(1)), ArithmeticCommand.Type.ADD);
+                    return new ArithmeticCommand(machine, lineNr, Integer.valueOf(parts.get(1)), ArithmeticCommand.Type.ADD);
                 case "SUB":
-                    return new ArithmeticCommand(machine, lineNr, (int) getLong(parts.get(1)), ArithmeticCommand.Type.SUB);
+                    return new ArithmeticCommand(machine, lineNr, Integer.valueOf(parts.get(1)), ArithmeticCommand.Type.SUB);
                 case "MULT":
-                    return new ArithmeticCommand(machine, lineNr, (int) getLong(parts.get(1)), ArithmeticCommand.Type.MULT);
+                    return new ArithmeticCommand(machine, lineNr, Integer.valueOf(parts.get(1)), ArithmeticCommand.Type.MULT);
                 case "DIV":
-                    return new ArithmeticCommand(machine, lineNr, (int) getLong(parts.get(1)), ArithmeticCommand.Type.DIV);
+                    return new ArithmeticCommand(machine, lineNr, Integer.valueOf(parts.get(1)), ArithmeticCommand.Type.DIV);
                 case "JUMP":
                     return new JumpCommand(machine, lineNr, getLong(parts.get(1)), JumpCommand.Type.JUMP);
                 case "JEQ":
@@ -123,11 +123,11 @@ public class Program {
                 case "LSR":
                     return new BitwiseCommand(machine, lineNr, BitwiseCommand.Type.LSR);
                 case "AND":
-                    return new Bitwise2Command(machine, lineNr, (int) getLong(parts.get(1)), Bitwise2Command.Type.AND);
+                    return new Bitwise2Command(machine, lineNr, Integer.valueOf(parts.get(1)), Bitwise2Command.Type.AND);
                 case "OR":
-                    return new Bitwise2Command(machine, lineNr, (int) getLong(parts.get(1)), Bitwise2Command.Type.OR);
+                    return new Bitwise2Command(machine, lineNr, Integer.valueOf(parts.get(1)), Bitwise2Command.Type.OR);
                 case "XOR":
-                    return new Bitwise2Command(machine, lineNr, (int) getLong(parts.get(1)), Bitwise2Command.Type.XOR);
+                    return new Bitwise2Command(machine, lineNr, Integer.valueOf(parts.get(1)), Bitwise2Command.Type.XOR);
                 default:
                     throw new UnknownCommandException(cmd, lineNr);
             }

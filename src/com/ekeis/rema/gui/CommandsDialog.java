@@ -12,10 +12,7 @@ import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class CommandsDialog extends JDialog {
@@ -26,7 +23,7 @@ public class CommandsDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JTree commandsTree;
-    private JTextArea descriptionPane;
+    private JTextPane descriptionPane;
     private JLabel titlePane;
 
     private static final String[] commands = new String[] {
@@ -77,8 +74,15 @@ public class CommandsDialog extends JDialog {
                     Object userObject = node.getUserObject();
                     if (userObject != null && userObject instanceof CommandDescription){
                         CommandDescription desc = (CommandDescription) userObject;
-                        titlePane.setText(desc.getTitle());
-                        descriptionPane.setText(desc.getDescription());
+                        String title, text;
+                        try {
+                            title = desc.getTitle();
+                            text = desc.getDescription();
+                        } catch (MissingResourceException ex) {
+                            return; //Just an father node without description
+                        }
+                        titlePane.setText(title);
+                        descriptionPane.setText(text);
                     }
                 }
             }
@@ -118,7 +122,7 @@ public class CommandsDialog extends JDialog {
         if (map.containsKey(ownId)) {
             return map.get(ownId);
         } else {
-            DefaultMutableTreeNode node = new DefaultMutableTreeNode(commandRes.getString(ownId), true);
+            DefaultMutableTreeNode node = new DefaultMutableTreeNode(new CommandDescription(ownId), true);
             map.put(ownId, node);
             DefaultMutableTreeNode father = getFather(map, ownId);
             if (father != null) {
@@ -126,24 +130,6 @@ public class CommandsDialog extends JDialog {
             }
             return node;
         }
-    }
-
-    private void createCategories(Map<String, TreeNode> map, String category) {
-        while (category.contains(".")) {
-            boolean added = addCategory(map, category);
-            if (!added) return; //other categories already there
-            int splitpoint = category.lastIndexOf('.');
-            category = category.substring(0, splitpoint);
-        }
-        addCategory(map, category);
-    }
-    private boolean addCategory(Map<String, TreeNode> map, String category) {
-        return addMapEntry(map, category, commandRes.getString(category));
-    }
-    private boolean addMapEntry(Map<String, TreeNode> map, String key, Object content) {
-        if (map.containsKey(key)) return false;
-        map.put(key, new DefaultMutableTreeNode(content));
-        return true;
     }
 
     private void onOK() {

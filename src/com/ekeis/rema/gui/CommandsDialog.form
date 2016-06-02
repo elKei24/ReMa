@@ -96,15 +96,12 @@
                     </properties>
                     <border type="none"/>
                     <children>
-                      <component id="ca931" class="javax.swing.JTextArea" binding="descriptionPane">
+                      <component id="81a6" class="javax.swing.JTextPane" binding="descriptionPane">
                         <constraints/>
                         <properties>
                           <editable value="false"/>
-                          <lineWrap value="true"/>
                           <minimumSize width="300" height="100"/>
                           <requestFocusEnabled value="true"/>
-                          <text resource-bundle="com/ekeis/rema/properties/GUIBundle" key="commands.tip"/>
-                          <wrapStyleWord value="true"/>
                         </properties>
                       </component>
                     </children>
