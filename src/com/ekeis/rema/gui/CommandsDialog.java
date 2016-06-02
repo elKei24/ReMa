@@ -30,6 +30,7 @@ public class CommandsDialog extends JDialog {
     private JLabel titlePane;
 
     private static final String[] commands = new String[] {
+            "cmd.end",
             "cmd.storage.dload",
             "cmd.storage.load",
             "cmd.storage.store",
@@ -44,7 +45,13 @@ public class CommandsDialog extends JDialog {
             "cmd.jump.jlt",
             "cmd.jump.jeq",
             "cmd.jump.jne",
-            "cmd.end",
+            "cmd.bitvise.not",
+            "cmd.bitvise.and",
+            "cmd.bitvise.or",
+            "cmd.bitvise.xor",
+            "cmd.bitvise.asl",
+            "cmd.bitvise.asr",
+            "cmd.bitvise.lsr",
             "cmd.debug.pause",
             "cmd.debug.log",
             "cmd.debug.comment"};

@@ -12,7 +12,7 @@ import com.ekeis.rema.engine.Register;
  */
 public class ArithmeticCommand extends Command {
 
-    public enum Type {ADD, SUB, MULT, DIV};
+    public enum Type {ADD, SUB, MULT, DIV, OR, AND, XOR};
 
     private Type type;
     private int register;
@@ -46,6 +46,18 @@ public class ArithmeticCommand extends Command {
             case DIV:
                 a/=b;
                 msg = "arithmetic.div";
+                break;
+            case OR:
+                a |= b;
+                msg = "bitvise.or";
+                break;
+            case XOR:
+                a ^= b;
+                msg = "bitvsie.xor";
+                break;
+            case AND:
+                a &= b;
+                msg = "bitvise.and";
                 break;
             default:
                 throw new UnsupportedOperationException("No action for the given type defined");
