@@ -13,8 +13,6 @@ import sun.swing.UIAction;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.UndoableEditEvent;
-import javax.swing.event.UndoableEditListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.text.DefaultStyledDocument;
@@ -139,16 +137,16 @@ public class MainForm implements Machine.MachineListener {
         undoManager = new CompoundUndoManager(codeArea);
         undoManager.setLimit(15);
         checkUndoEnabled();
-        codeArea.getDocument().addUndoableEditListener(new UndoableEditListener() {
+        undoManager.addListener(new CompoundUndoManager.CompoundUndoManagerListener() {
             @Override
-            public void undoableEditHappened(UndoableEditEvent e) {
+            public void onEnabledChanged() {
                 checkUndoEnabled();
             }
         });
     }
 
     private void checkUndoEnabled() {
-        boolean undo = undoManager.isSignificant() && undoManager.canUndo();
+        boolean undo = undoManager.canUndo();
         boolean redo = undoManager.canRedo();
         menuCodeUndo.setEnabled(undo);
         popupCodeUndo.setEnabled(undo);
@@ -212,7 +210,7 @@ public class MainForm implements Machine.MachineListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 menuFileSave.setEnabled(false);
-                codeArea.setText(resNoTranslation.getString("code.default"));
+                setCode(resNoTranslation.getString("code.default"));
             }
         });
         menuFileNew.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
@@ -425,7 +423,8 @@ public class MainForm implements Machine.MachineListener {
                 while ((line = br.readLine()) != null) {
                     sb.append(line + "\n");
                 }
-                codeArea.setText(sb.toString().trim());
+                setCode(sb.toString().trim());
+                undoManager.discardAllEdits();
                 log.fine("have loaded from file");
             } catch (Exception ex) {
                 log.log(Level.WARNING, "Failed to load from file.", ex);
@@ -479,8 +478,13 @@ public class MainForm implements Machine.MachineListener {
             }
         }
         if (sure) {
-            codeArea.setText(CodeHelper.updateLineNumbers(codeArea.getText()));
+            setCode(CodeHelper.updateLineNumbers(codeArea.getText()));
         }
+    }
+    private void setCode(String txt) {
+        undoManager.setCombineEverything(true);
+        codeArea.setText(txt);
+        undoManager.setCombineEverything(false);
     }
 
     private void run() {
