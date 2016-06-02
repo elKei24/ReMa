@@ -8,20 +8,17 @@ import com.ekeis.rema.engine.Machine;
 import com.ekeis.rema.engine.Register;
 import com.ekeis.rema.engine.log.LogMessage;
 import com.ekeis.rema.prefs.Prefs;
-import sun.swing.UIAction;
 
 import javax.swing.*;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.StyledDocument;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.*;
 import java.net.URI;
@@ -36,10 +33,12 @@ import java.util.logging.Logger;
  * @author Elias Keis (29.05.2016)
  */
 public class MainForm implements Machine.MachineListener {
+    //constants
     private static final Logger log = Logger.getLogger(MainForm.class.getName());
-    private static ResourceBundle res = ResourceBundle.getBundle("com/ekeis/rema/properties/GUIBundle");
-    ResourceBundle resNoTranslation = ResourceBundle.getBundle("com/ekeis/rema/properties/NoTranslation");
+    private static final ResourceBundle res = ResourceBundle.getBundle("com/ekeis/rema/properties/GUIBundle");
+    private static final ResourceBundle resNoTranslation = ResourceBundle.getBundle("com/ekeis/rema/properties/NoTranslation");
 
+    //generated fields
     private JPanel contentPanel;
     private JTextPane codeArea;
     private JPanel registerOverview;
@@ -53,63 +52,205 @@ public class MainForm implements Machine.MachineListener {
     private JScrollPane registerScrollPane;
     private JScrollPane editorScrollPane;
     private JFileChooser fileChooser;
-    private JMenuItem menuFileSave;
 
+    //own fields
     private Machine machine;
     private CompoundUndoManager undoManager;
-    private JMenuItem menuCodeUndo, popupCodeUndo, menuCodRedo, popupCodeRedo, menuMachineRun, menuMachineStep,
-            menuMachineReset, menuMachinePause;
     private LogTableModel logModel;
     private boolean compilationScheduled;
-
     private int curLine = -1;
     private boolean styleCode = Prefs.getInstance().getStyleCode();
 
+    //----------
+    // Actions
+    //----------
+
+    //file actions
+    private final AbstractAction actionFileNew = new GuiAction(res.getString("menu.file.new"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            actionFileSave.setEnabled(false);
+            setCode(resNoTranslation.getString("code.default"));
+        }
+    };
+    private final AbstractAction actionFileLoad = new GuiAction(res.getString("menu.file.load"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            load();
+        }
+    };
+    private final AbstractAction actionFileSave = (new GuiAction(res.getString("menu.file.save"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), false) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            save();
+        }
+    });
+    private final AbstractAction actionFileSaveAs = new GuiAction(res.getString("menu.file.save_as"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            saveAs();
+        }
+    };
+    private final AbstractAction actionFileSettings = new GuiAction(res.getString("menu.file.settings")) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            showSettings();
+        }
+    };
+    private final AbstractAction actionFileExit = new GuiAction(res.getString("menu.file.exit"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_F4, KeyEvent.ALT_DOWN_MASK)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            System.exit(0);
+        }
+    };
+
+    //code actions
+    private final AbstractAction actionCodePaste = new GuiAction(res.getString("menu.code.paste"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.CTRL_DOWN_MASK)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            codeArea.paste();
+        }
+    };
+    private final AbstractAction actionCodeCopy = new GuiAction(res.getString("menu.code.copy"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.CTRL_DOWN_MASK), false) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            codeArea.copy();
+        }
+    };
+    private final AbstractAction actionCodeCut = new GuiAction(res.getString("menu.code.cut"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.CTRL_DOWN_MASK), false) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            codeArea.cut();
+        }
+    };
+    private final AbstractAction actionCodeUndo = new GuiAction(res.getString("menu.code.undo"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            undo();
+        }
+    };
+    private final AbstractAction actionCodeRedo = new GuiAction(res.getString("menu.code.redo"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_Y, KeyEvent.CTRL_DOWN_MASK)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            redo();
+        }
+    };
+    private final AbstractAction actionCodeAutolines = new GuiAction(res.getString("menu.code.update_line_numbers"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            autolines();
+        }
+    };
+
+    //machine actions
+    private final AbstractAction actionMachineRun = new GuiAction(res.getString("action.run"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_1, KeyEvent.CTRL_DOWN_MASK), res.getString("action.run.tooltip"), false) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            machine.run();
+        }
+    };
+    private final AbstractAction actionMachineStep = new GuiAction(res.getString("action.step"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_2, KeyEvent.CTRL_DOWN_MASK), res.getString("action.step.tooltip"), false) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            machine.step();
+        }
+    };
+    private final AbstractAction actionMachineReset = new GuiAction(res.getString("action.reset"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_3, KeyEvent.CTRL_DOWN_MASK), res.getString("action.reset.tooltip")) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            reset();
+        }
+    };
+    private final AbstractAction actionMachinePause = new GuiAction(res.getString("action.pause"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_4, KeyEvent.CTRL_DOWN_MASK), res.getString("action.pause.tooltip"), false) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            pause();
+        }
+    };
+
+    //help actions
+    private final AbstractAction actionHelpCommands = new GuiAction(res.getString("menu.help.commands"),
+            KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            CommandsDialog dialog = new CommandsDialog();
+            dialog.pack();
+            dialog.setVisible(true);
+        }
+    };
+    private final AbstractAction actionHelpFeedback = new GuiAction(res.getString("menu.help.feedback")) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String mail = resNoTranslation.getString("feedback.mail");
+            try {
+                Desktop.getDesktop().mail(new URI(String.format(
+                        resNoTranslation.getString("feedback.uri"), mail)));
+                log.info("Opening mail program for feedback mail");
+            } catch (IOException | URISyntaxException ex) {
+                log.warning("Failed to open mail program for feedback mail");
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(contentPanel, String.format(
+                        res.getString("feedback.not_supported.msg"), mail),
+                        res.getString("feedback.not_supported.title"), JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    };
+    private final AbstractAction actionHelpAbout = new GuiAction(res.getString("menu.help.about")) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            AboutDialog dialog = new AboutDialog();
+            dialog.pack();
+            dialog.setVisible(true);
+        }
+    };
+
+    //log
+    private final AbstractAction actionLogClear = new GuiAction(res.getString("menu.log.clear")) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            logModel.clear();
+
+        }
+    };
+
+    //-----------
+    // creation
+    //-----------
 
     public MainForm() {
+        //init machine
         machine = new Machine();
         machine.addListener(this);
         machine.setNumRegisters(Prefs.getInstance().getNumberRegisters());
+        registerOverview.setLayout(new WrapLayout(FlowLayout.LEFT));
 
+        //create rest of GUI
         createJMenuBar();
         createFileChooser();
-        registerOverview.setLayout(new WrapLayout(FlowLayout.LEFT));
         createRegisters();
 
-        buttonReset.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                reset();
-            }
-        });
-        buttonRun.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                run();
-            }
-        });
-        buttonStep.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                step();
-            }
-        });
-        buttonPause.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                pause();
-            }
-        });
+        //buttons
+        buttonReset.setAction(actionMachineReset);
+        buttonRun.setAction(actionMachineRun);
+        buttonStep.setAction(actionMachineStep);
+        buttonPause.setAction(actionMachinePause);
 
-        try {
-            String codeDefault = resNoTranslation.getString("code.default");
-            StyledDocument codeDoc = new DefaultStyledDocument();
-            codeArea.setDocument(codeDoc);
-            codeArea.setText(codeDefault);
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to change codeArea document", e);
-        }
-
+        //set up code area
         if (styleCode) CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
         codeArea.setComponentPopupMenu(createEditorPopup());
         codeArea.getDocument().addDocumentListener(new DocumentListener() {
@@ -128,14 +269,19 @@ public class MainForm implements Machine.MachineListener {
                 //onCodeChange(e);
             }
         });
+        codeArea.addCaretListener(new CaretListener() {
+            @Override
+            public void caretUpdate(CaretEvent e) {
+                //clipboard actions
+                boolean selection = e.getDot() != e.getMark();
+                actionCodeCopy.setEnabled(selection);
+                actionCodeCut.setEnabled(selection);
+            }
+        });
 
-        setPauseEnabled(false);
-        setResetEnabled(true);
-        setStepRunEnabled(false);
-        reset();
-
+        //set up undo manager
         undoManager = new CompoundUndoManager(codeArea);
-        undoManager.setLimit(15);
+        undoManager.setLimit(25);
         checkUndoEnabled();
         undoManager.addListener(new CompoundUndoManager.CompoundUndoManagerListener() {
             @Override
@@ -143,39 +289,23 @@ public class MainForm implements Machine.MachineListener {
                 checkUndoEnabled();
             }
         });
+
+        //reset machine
+        reset();
     }
 
-    private void checkUndoEnabled() {
-        boolean undo = undoManager.canUndo();
-        boolean redo = undoManager.canRedo();
-        menuCodeUndo.setEnabled(undo);
-        popupCodeUndo.setEnabled(undo);
-        menuCodRedo.setEnabled(redo);
-        popupCodeRedo.setEnabled(redo);
+    public JFrame createFrame() {
+        JFrame frame = new JFrame(res.getString("app.name"));
+        frame.setContentPane(contentPanel);
+        frame.setJMenuBar(jMenuBar);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setPreferredSize(new Dimension(640, 640));
+        frame.setMinimumSize(new Dimension(450, 360));
+        return frame;
     }
 
-    private JPopupMenu createEditorPopup() {
-        JPopupMenu menu = new JPopupMenu(res.getString("menu.code"));JMenu codeMenu = new JMenu(res.getString("menu.code"));
-        popupCodeUndo = menu.add(new UIAction(res.getString("menu.code.undo")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                undo();
-            }
-        });
-        popupCodeRedo = menu.add(new UIAction(res.getString("menu.code.redo")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                redo();
-            }
-        });
-        menu.add(new JSeparator(JSeparator.HORIZONTAL));
-        menu.add(new UIAction(res.getString("menu.code.update_line_numbers")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                autolines();
-            }
-        });
-        return menu;
+    private void createUIComponents() {
+        createLogTable();
     }
 
     private void createFileChooser() {
@@ -206,63 +336,15 @@ public class MainForm implements Machine.MachineListener {
         JMenu fileMenu = new JMenu(res.getString("menu.file"));
         fileMenu.setMnemonic(fileMenu.getText().charAt(0));
         jMenuBar.add(fileMenu);
-        JMenuItem menuFileNew = fileMenu.add(new UIAction(res.getString("menu.file.new")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                menuFileSave.setEnabled(false);
-                setCode(resNoTranslation.getString("code.default"));
-            }
-        });
-        menuFileNew.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
-        menuFileNew.setMnemonic(menuFileNew.getText().charAt(0));
 
-        JMenuItem menuFileLoad = fileMenu.add(new UIAction(res.getString("menu.file.load")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                load();
-            }
-        });
-        menuFileLoad.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
-        menuFileLoad.setMnemonic(menuFileLoad.getText().charAt(0));
-
-        menuFileSave = fileMenu.add(new UIAction(res.getString("menu.file.save")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                save();
-            }
-        });
-        menuFileSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
-        menuFileSave.setEnabled(false);
-        menuFileSave.setMnemonic(menuFileSave.getText().charAt(0));
-
-        JMenuItem menuFileSaveAs = fileMenu.add(new UIAction(res.getString("menu.file.save_as")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveAs();
-            }
-        });
-        menuFileSaveAs.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK | KeyEvent.ALT_DOWN_MASK));
-        menuFileSaveAs.setMnemonic(menuFileSaveAs.getText().charAt(0));
-
+        fileMenu.add(actionFileNew);
+        fileMenu.add(actionFileLoad);
+        fileMenu.add(actionFileSave);
+        fileMenu.add(actionFileSaveAs);
         fileMenu.add(new JSeparator(JSeparator.HORIZONTAL));
-        JMenuItem menuFileSettings = fileMenu.add(new UIAction(res.getString("menu.file.settings")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showSettings();
-            }
-        });
-        menuFileSettings.setMnemonic(menuFileSettings.getText().charAt(0));
-
-
+        fileMenu.add(actionFileSettings);
         fileMenu.add(new JSeparator(JSeparator.HORIZONTAL));
-        JMenuItem fileMenuExit = fileMenu.add(new UIAction(res.getString("menu.file.exit")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
-        fileMenuExit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, KeyEvent.ALT_DOWN_MASK));
-        fileMenuExit.setMnemonic(fileMenuExit.getText().charAt(0));
+        fileMenu.add(actionFileExit);
 
         //CODE MENU
 
@@ -270,33 +352,14 @@ public class MainForm implements Machine.MachineListener {
         codeMenu.setMnemonic(codeMenu.getText().charAt(0));
         jMenuBar.add(codeMenu);
 
-        menuCodeUndo = codeMenu.add(new UIAction(res.getString("menu.code.undo")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                undo();
-            }
-        });
-        menuCodeUndo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK));
-        menuCodeUndo.setMnemonic(menuCodeUndo.getText().charAt(0));
-
-        menuCodRedo = codeMenu.add(new UIAction(res.getString("menu.code.redo")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                redo();
-            }
-        });
-        menuCodRedo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, KeyEvent.CTRL_DOWN_MASK));
-        menuCodRedo.setMnemonic(menuCodRedo.getText().charAt(0));
-
+        codeMenu.add(actionCodeUndo);
+        codeMenu.add(actionCodeRedo);
         codeMenu.add(new JSeparator(JSeparator.HORIZONTAL));
-        JMenuItem menuCodeAutolines = codeMenu.add(new UIAction(res.getString("menu.code.update_line_numbers")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                autolines();
-            }
-        });
-        menuCodeAutolines.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK));
-        menuCodeAutolines.setMnemonic(menuCodeAutolines.getText().charAt(0));
+        codeMenu.add(actionCodeCut);
+        codeMenu.add(actionCodeCopy);
+        codeMenu.add(actionCodePaste);
+        codeMenu.add(new JSeparator(JSeparator.HORIZONTAL));
+        codeMenu.add(actionCodeAutolines);
 
         //MACHINE MENU
 
@@ -304,45 +367,10 @@ public class MainForm implements Machine.MachineListener {
         machineMenu.setMnemonic(machineMenu.getText().charAt(0));
         jMenuBar.add(machineMenu);
 
-        menuMachineRun = machineMenu.add(new UIAction(res.getString("action.run")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                run();
-            }
-        });
-        menuMachineRun.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, KeyEvent.CTRL_DOWN_MASK));
-        menuMachineRun.setMnemonic(menuMachineRun.getText().charAt(0));
-        menuMachineRun.setToolTipText(res.getString("action.run.tooltip"));
-
-        menuMachineStep = machineMenu.add(new UIAction(res.getString("action.step")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                step();
-            }
-        });
-        menuMachineStep.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_2, KeyEvent.CTRL_DOWN_MASK));
-        menuMachineStep.setMnemonic(menuMachineStep.getText().charAt(0));
-        menuMachineStep.setToolTipText(res.getString("action.step.tooltip"));
-
-        menuMachineReset = machineMenu.add(new UIAction(res.getString("action.reset")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                reset();
-            }
-        });
-        menuMachineReset.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_3, KeyEvent.CTRL_DOWN_MASK));
-        menuMachineReset.setMnemonic(menuMachineReset.getText().charAt(0));
-        menuMachineReset.setToolTipText(res.getString("action.reset.tooltip"));
-
-        menuMachinePause = machineMenu.add(new UIAction(res.getString("action.pause")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                pause();
-            }
-        });
-        menuMachinePause.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_4, KeyEvent.CTRL_DOWN_MASK));
-        menuMachinePause.setMnemonic(menuMachinePause.getText().charAt(0));
-        menuMachinePause.setToolTipText(res.getString("action.pause.tooltip"));
+        machineMenu.add(actionMachineRun);
+        machineMenu.add(actionMachineStep);
+        machineMenu.add(actionMachineReset);
+        machineMenu.add(actionMachinePause);
 
 
         //HELP MENU
@@ -351,50 +379,67 @@ public class MainForm implements Machine.MachineListener {
         jMenuBar.add(helpMenu);
         helpMenu.setMnemonic(helpMenu.getText().charAt(0));
 
-        JMenuItem menuHelpCommands = helpMenu.add(new UIAction(res.getString("menu.help.commands")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CommandsDialog dialog = new CommandsDialog();
-                dialog.pack();
-                dialog.setVisible(true);
-            }
-        });
-        menuHelpCommands.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
-        menuHelpCommands.setMnemonic(menuHelpCommands.getText().charAt(0));
+        helpMenu.add(actionHelpCommands);
 
         if (Desktop.isDesktopSupported()) {
-            JMenuItem menuHelpFeedback = helpMenu.add(new UIAction(res.getString("menu.help.feedback")) {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String mail = resNoTranslation.getString("feedback.mail");
-                    try {
-                        Desktop.getDesktop().mail(new URI(String.format(
-                                resNoTranslation.getString("feedback.uri"), mail)));
-                        log.info("Opening mail program for feedback mail");
-                    } catch (IOException | URISyntaxException ex) {
-                        log.warning("Failed to open mail program for feedback mail");
-                        ex.printStackTrace();
-                        JOptionPane.showMessageDialog(contentPanel, String.format(
-                                res.getString("feedback.not_supported.msg"), mail),
-                                res.getString("feedback.not_supported.title"), JOptionPane.INFORMATION_MESSAGE);
-                    }
-                }
-            });
-            menuHelpFeedback.setMnemonic(menuHelpFeedback.getText().charAt(0));
+            helpMenu.add(actionHelpFeedback);
         } else {
-            log.info("Desktop not supported; will not add feedback option");
+            log.info("Desktop not supported; will not add feedback menu item");
         }
 
-        JMenuItem menuHelpAbout = helpMenu.add(new UIAction(res.getString("menu.help.about")) {
+        helpMenu.add(actionHelpAbout);
+    }
+    private JPopupMenu createEditorPopup() {
+        JPopupMenu menu = new JPopupMenu(res.getString("menu.code"));
+
+        menu.add(actionCodeCut);
+        menu.add(actionCodeCopy);
+        menu.add(actionCodePaste);
+
+        menu.add(new JSeparator(JSeparator.HORIZONTAL));
+        menu.add(actionCodeUndo);
+        menu.add(actionCodeRedo);
+        menu.add(new JSeparator(JSeparator.HORIZONTAL));
+        menu.add(actionCodeAutolines);
+        return menu;
+    }
+
+    //log
+    private void createLogTable() {
+        logModel = new LogTableModel();
+        logTable = new JTable(logModel);
+        JPopupMenu popup = new JPopupMenu(res.getString("menu.log"));
+        popup.add(actionLogClear);
+        logTable.setComponentPopupMenu(popup);
+    }
+
+    //Registers
+    private void createRegisters() {
+        SwingUtilities.invokeLater(new Runnable() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                AboutDialog dialog = new AboutDialog();
-                dialog.pack();
-                dialog.setVisible(true);
+            public void run() {
+                log.finer("creating registers");
+                registerOverview.removeAll();
+                registerOverviewVIP.removeAll();
+                registerOverviewVIP.add(new RegisterGui(machine.getAkku(), res.getString("overview.akku")), BorderLayout.WEST);
+                registerOverviewVIP.add(new RegisterGui(machine.getCounter(), res.getString("overview.ip")), BorderLayout.EAST);
+
+                List<Register> registers = machine.getRegisters();
+                for (int i = 0; i < registers.size(); i++) {
+                    Register r = registers.get(i);
+                    if (r != null) {
+                        registerOverview.add(new RegisterGui(r, String.format(res.getString("overview.register"), i)));
+                    }
+                }
+                registerScrollPane.validate();
+                registerScrollPane.repaint();
             }
         });
-        menuHelpAbout.setMnemonic(menuHelpAbout.getText().charAt(0));
     }
+
+    //------------------
+    // action handles
+    //------------------
 
     private void showSettings() {
         SettingsDialog dialog = new SettingsDialog();
@@ -415,7 +460,7 @@ public class MainForm implements Machine.MachineListener {
 
     private void load() {
         if (JFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(contentPanel)) {
-            menuFileSave.setEnabled(true);
+            actionFileSave.setEnabled(true);
             File file = fileChooser.getSelectedFile();
             try (BufferedReader br = new BufferedReader(new FileReader(file))){
                 StringBuilder sb = new StringBuilder();
@@ -456,7 +501,7 @@ public class MainForm implements Machine.MachineListener {
     private void saveAs() {
         if (JFileChooser.APPROVE_OPTION == fileChooser.showSaveDialog(contentPanel)) {
             save();
-            menuFileSave.setEnabled(true);
+            actionFileSave.setEnabled(true);
         }
     }
 
@@ -481,18 +526,7 @@ public class MainForm implements Machine.MachineListener {
             setCode(CodeHelper.updateLineNumbers(codeArea.getText()));
         }
     }
-    private void setCode(String txt) {
-        undoManager.setCombineEverything(true);
-        codeArea.setText(txt);
-        undoManager.setCombineEverything(false);
-    }
 
-    private void run() {
-        machine.run();
-    }
-    private void step() {
-        machine.step();
-    }
     private void reset() {
         curLine = -1;
         logModel.clear();
@@ -501,53 +535,6 @@ public class MainForm implements Machine.MachineListener {
     }
     private void pause() {
         machine.pause();
-    }
-
-    private void onCodeChange(final DocumentEvent e) {
-        log.log(Level.FINER, "codeChange");
-        if (e.getDocument().equals(codeArea.getDocument())) try {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    log.log(Level.FINER, "codeStyleRun");
-                    if (styleCode) CodeHelper.styleCodeAfterChange(e, curLine);
-                }
-            });
-        } catch (IllegalArgumentException iae) {
-            log.log(Level.WARNING, "Failed to style code", iae);
-        }
-        final int DELAY = 1000;
-        setStepRunEnabled(false);
-        if (Prefs.getInstance().getLifeCompileEnabled()) {
-            if (!compilationScheduled) {
-                compilationScheduled = true;
-                java.util.Timer t = new Timer("codeCompilationTimer");
-                t.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        compilationScheduled = false;
-                        reset();
-                    }
-                }, new Date((new Date()).getTime() + DELAY));
-                reset();
-            }
-        } else {
-            machine.pause();
-        }
-    }
-    private void setStepRunEnabled(boolean enabled) {
-        buttonStep.setEnabled(enabled);
-        buttonRun.setEnabled(enabled);
-        menuMachineRun.setEnabled(enabled);
-        menuMachineStep.setEnabled(enabled);
-    }
-    private void setResetEnabled(boolean enabled) {
-        buttonReset.setEnabled(enabled);
-        menuMachineReset.setEnabled(enabled);
-    }
-    private void setPauseEnabled(boolean enabled) {
-        buttonPause.setEnabled(enabled);
-        menuMachinePause.setEnabled(enabled);
     }
 
     private void undo() {
@@ -567,17 +554,68 @@ public class MainForm implements Machine.MachineListener {
         checkUndoEnabled();
     }
 
-    public JFrame createFrame() {
-        JFrame frame = new JFrame(res.getString("app.name"));
-        frame.setContentPane(contentPanel);
-        frame.setJMenuBar(jMenuBar);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setPreferredSize(new Dimension(640, 640));
-        frame.setMinimumSize(new Dimension(450, 360));
-        return frame;
+    //----------
+    // Helpers
+    //----------
+
+    private void checkUndoEnabled() {
+        actionCodeRedo.setEnabled(undoManager.canRedo());
+        actionCodeUndo.setEnabled(undoManager.canUndo());
     }
 
-    //Machine listener
+    private void setCode(String txt) {
+        undoManager.setCombineEverything(true);
+        codeArea.setText(txt);
+        undoManager.setCombineEverything(false);
+    }
+
+    //-------------------
+    // Document listener
+    //-------------------
+
+    private void onCodeChange(final DocumentEvent e) {
+        log.log(Level.FINER, "codeChange");
+
+        //style code
+        try {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    log.log(Level.FINER, "codeStyleRun");
+                    if (styleCode) CodeHelper.styleCodeAfterChange(e, curLine);
+                }
+            });
+        } catch (IllegalArgumentException iae) {
+            log.log(Level.WARNING, "Failed to style code", iae);
+        }
+
+        //compile code
+        final int DELAY = 1000;
+        actionMachineStep.setEnabled(false);
+        actionMachineRun.setEnabled(false);
+        if (Prefs.getInstance().getLifeCompileEnabled()) {
+            if (!compilationScheduled) {
+                compilationScheduled = true;
+                java.util.Timer t = new Timer("codeCompilationTimer");
+                t.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        compilationScheduled = false;
+                        reset();
+                    }
+                }, new Date((new Date()).getTime() + DELAY));
+                reset();
+            }
+        } else {
+            machine.pause();
+        }
+    }
+
+
+    //-------------------
+    // Machine listener
+    //-------------------
+
     @Override
     public void onLogMessage(Machine machine, final LogMessage msg) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -592,7 +630,8 @@ public class MainForm implements Machine.MachineListener {
 
     @Override
     public void onCompileTried(Machine machine, boolean success) {
-        setStepRunEnabled(success);
+        actionMachineStep.setEnabled(success);
+        actionMachineRun.setEnabled(success);
     }
 
     @Override
@@ -601,9 +640,14 @@ public class MainForm implements Machine.MachineListener {
         buttonStep.setVisible(!running);
         buttonRun.setVisible(!running);
         buttonReset.setVisible(!running);
-        setStepRunEnabled(!running && !machine.isEnd());
-        setPauseEnabled(running);
-        setResetEnabled(!running);
+
+        boolean enableRun = !running && !machine.isEnd();
+        actionMachineStep.setEnabled(enableRun);
+        actionMachineRun.setEnabled(enableRun);
+        actionMachinePause.setEnabled(running);
+
+        boolean enableReset = !running;
+        actionMachineReset.setEnabled(enableReset);
     }
 
     @Override
@@ -634,91 +678,4 @@ public class MainForm implements Machine.MachineListener {
         });
     }
 
-    //Registers
-    private void createRegisters() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                log.finer("creating registers");
-                registerOverview.removeAll();
-                registerOverviewVIP.removeAll();
-                registerOverviewVIP.add(new RegisterGui(machine.getAkku(), res.getString("overview.akku")), BorderLayout.WEST);
-                registerOverviewVIP.add(new RegisterGui(machine.getCounter(), res.getString("overview.ip")), BorderLayout.EAST);
-
-                List<Register> registers = machine.getRegisters();
-                for (int i = 0; i < registers.size(); i++) {
-                    Register r = registers.get(i);
-                    if (r != null) {
-                        registerOverview.add(new RegisterGui(r, String.format(res.getString("overview.register"), i)));
-                    }
-                }
-                registerScrollPane.validate();
-                registerScrollPane.repaint();
-            }
-        });
-    }
-
-    //Table
-    private void createUIComponents() {
-        createLogTable();
-    }
-    private void createLogTable() {
-        logModel = new LogTableModel();
-        logTable = new JTable(logModel);
-        JPopupMenu popup = new JPopupMenu(res.getString("menu.log"));
-        JMenuItem menuClear = popup.add(new UIAction(res.getString("menu.log.clear")) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                logModel.clear();
-
-            }
-        });
-        logTable.setComponentPopupMenu(popup);
-    }
-
-    public class LogTableModel extends AbstractTableModel {
-        List<LogMessage> entries = new LinkedList<>();
-
-        public LogTableModel() {
-            super();
-        }
-
-        @Override
-        public int getRowCount() {
-            return entries.size();
-        }
-
-        @Override
-        public int getColumnCount() {
-            return 1;
-        }
-        @Override
-        public String getColumnName(int column) {
-            return res.getString("log.msg");
-        }
-
-
-        public void add(LogMessage msg) {
-            entries.add(0, msg);
-            fireTableRowsInserted(0, 0);
-        }
-        public void clear() {
-            entries.clear();
-            fireTableDataChanged();
-        }
-
-        @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            ResourceBundle logRes = ResourceBundle.getBundle("com/ekeis/rema/properties/Log");
-            LogMessage msg = entries.get(rowIndex);
-            String txt = msg.getMessage();
-            String formatter = "%s";
-            switch (msg.getCategory()) {
-                case ERROR:
-                    formatter = "<span style=\"color:red;\">%s</span>";
-                    break;
-            }
-            return String.format("<html>"+formatter+"</html>", txt);
-        }
-    }
 }
