@@ -21,19 +21,21 @@ public class EndCommand extends Command {
 
     @Override
     public void perform() {
+        String msg;
         switch (type) {
             case END:
                 machine.end();
-                machine.increaseIP();
+                msg = "end";
                 break;
             case PAUSE:
                 machine.pause();
-                machine.increaseIP();
+                msg = "debug.pause";
                 break;
             default:
                 throw new UnsupportedOperationException("No action for the given type defined");
         }
-        logExecution("end");
+        machine.increaseIP();
+        logExecution(msg);
     }
 
 }
