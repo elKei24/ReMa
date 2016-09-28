@@ -188,9 +188,11 @@ public class MainForm implements Machine.MachineListener {
             KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0)) {
         @Override
         public void actionPerformed(ActionEvent e) {
+            log.entering(MainForm.class.getSimpleName() + ".actionHelpCommands", "actionPerformed");
             CommandsDialog dialog = new CommandsDialog();
             dialog.pack();
             dialog.setVisible(true);
+            log.exiting(MainForm.class.getSimpleName() + ".actionHelpCommands", "actionPerformed");
         }
     };
     private final AbstractAction actionHelpFeedback = new GuiAction(res.getString("menu.help.feedback")) {

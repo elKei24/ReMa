@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 
 public class CommandsDialog extends JDialog {
     private static final Logger log = Logger.getLogger(CommandsDialog.class.getName());
-    private static final ResourceBundle commandRes = ResourceBundle.getBundle("com/ekeis/rema/properties/CommandDescriptions");
     private static final ResourceBundle guiRes = ResourceBundle.getBundle("com/ekeis/rema/properties/GUIBundle");
 
     private JPanel contentPane;
@@ -141,7 +140,7 @@ public class CommandsDialog extends JDialog {
      */
     public static final class CommandDescription {
         private static final Logger log = Logger.getLogger(CommandDescription.class.getName());
-        private static final ResourceBundle res = ResourceBundle.getBundle("com/ekeis/rema/properties/commandDescriptions");
+        private static final ResourceBundle res = ResourceBundle.getBundle("com/ekeis/rema/properties/CommandDescriptions");
 
         private String id;
 
