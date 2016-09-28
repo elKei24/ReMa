@@ -20,6 +20,7 @@ public class Prefs {
     private static final String KEY_REGISTER_MIN = PREF_SETTINGS + "registerMin";
     private static final String KEY_LIFE_COMPILE = PREF_SETTINGS + "lifeCompilation";
     private static final String KEY_STYLE_CODE = PREF_SETTINGS + "styleCode";
+    private static final String KEY_COMMANDSUPPER = PREF_SETTINGS + "commandsUpper";
     private static final String KEY_RUN_WAIT = PREF_SETTINGS + "waitMs";
     private static final String KEY_NUMBERREPRESENTATION = PREF_SETTINGS + "numberRepresentation";
     private static final String KEY_IGNORE_AUTOLINES = "ignoreAutolinesWarning";
@@ -98,5 +99,11 @@ public class Prefs {
     }
     public void setNumberRepresentation(byte repr) {
         prefs.putLong(KEY_NUMBERREPRESENTATION, repr);
+    }
+    public boolean getUpperCommands() {
+        return prefs.getBoolean(KEY_COMMANDSUPPER, true);
+    }
+    public void setUpperCommands(boolean upper) {
+        prefs.putBoolean(KEY_COMMANDSUPPER, upper);
     }
 }

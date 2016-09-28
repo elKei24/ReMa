@@ -6,6 +6,7 @@ package com.ekeis.rema.gui;
 
 import com.ekeis.rema.engine.Program;
 import com.ekeis.rema.engine.exceptions.syntax.SyntaxException;
+import com.ekeis.rema.prefs.Prefs;
 import javafx.util.Pair;
 
 import javax.swing.event.DocumentEvent;
@@ -14,6 +15,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,11 +26,36 @@ public class CodeHelper {
     private static final Logger log = Logger.getLogger(CodeHelper.class.getName());
 
     //styles
-    private static final StyleContext styleContext = createStyles();
     private static final String STYLE_DEFAULT = "defaultStyle";
     private static final String STYLE_COMMENT = "comment";
     private static final String STYLE_LINENR = "lineNr";
     private static final String STYLE_CURRENT_LINE = "currentLine";
+    private static final String STYLE_COMMAND = "command";
+    private static final StyleContext styleContext;
+    static {
+        StyleContext c = new StyleContext();
+
+        //default style
+        Style defaultStyle = c.addStyle(STYLE_DEFAULT, c.getStyle(StyleContext.DEFAULT_STYLE));
+
+        //comment style
+        Style commentStyle = c.addStyle(STYLE_COMMENT, defaultStyle);
+        StyleConstants.setForeground(commentStyle, Color.DARK_GRAY);
+        StyleConstants.setItalic(commentStyle, true);
+
+        //current line style
+        Style currentLineStyle = c.addStyle(STYLE_CURRENT_LINE, defaultStyle);
+        StyleConstants.setBackground(currentLineStyle, Color.getHSBColor((float) 50.0/360, (float) 0.5, (float) 1.0));
+
+        //linenr style
+        Style linenrStyle = c.addStyle(STYLE_LINENR, defaultStyle);
+        StyleConstants.setForeground(linenrStyle, Color.getHSBColor((float) 25.0 / 360, (float) 1, (float) 0.8));
+
+        //command style
+        c.addStyle(STYLE_COMMAND, defaultStyle);
+
+        styleContext = c;
+    }
 
     public static String updateLineNumbers(String code) {
         int lineNr = 1;
@@ -128,7 +155,7 @@ public class CodeHelper {
 
         String line = code.substring(startLine, endLine);
 
-        //reset style for whole liine
+        //reset style for whole line
         doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_DEFAULT), true);
 
         //style parts
@@ -145,6 +172,7 @@ public class CodeHelper {
 
             //lineNr styling
             int lineNr;
+            int lineNrPos = -1;
             try {
                 lineNr = Program.cutLineNumber(line).getKey();
             } catch (SyntaxException se) {
@@ -152,7 +180,7 @@ public class CodeHelper {
             }
             if (lineNr > 0) {
                 //lineNr itsself
-                int lineNrPos = line.indexOf(':');
+                lineNrPos = line.indexOf(':');
                 doc.setCharacterAttributes(startLine, lineNrPos + 1, styleContext.getStyle(STYLE_LINENR), false);
 
                 //current line
@@ -160,28 +188,37 @@ public class CodeHelper {
                     doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_CURRENT_LINE), false);
                 }
             }
+
+            //command styling
+            commandStyling:
+            {
+                //find beginning
+                int commandPos = startLine + (lineNrPos < 0 ? 0 : lineNrPos + 1);
+                while (commandPos < endLine && code.charAt(commandPos) == ' ') commandPos++; //ignore space in front of command
+                if (commandPos >= endLine) break commandStyling; //cancel if there is no command
+
+                //find end
+                int commandEnd = code.indexOf(' ', commandPos + 1);
+                if (commandEnd > endLine || commandEnd < 0) commandEnd = endLine;
+
+                //do styling
+                if (commandPos >= 0 && commandPos < endLine && commandEnd > commandPos) {
+                    doc.setCharacterAttributes(commandPos, commandEnd - commandPos, styleContext.getStyle(STYLE_COMMAND), false);
+                    if (Prefs.getInstance().getUpperCommands()) {
+                        String command = code.substring(commandPos, commandEnd);
+                        String commandUpper = command.toUpperCase(Locale.ROOT);
+                        if (!command.equals(commandUpper)) {
+                            try {
+                                doc.remove(commandPos, commandEnd - commandPos);
+                                doc.insertString(commandPos, commandUpper, styleContext.getStyle(STYLE_COMMAND));
+                            } catch (BadLocationException e) {
+                                log.throwing(CodeHelper.class.getName(), "styleCodeLine()", e);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
-    private static final StyleContext createStyles() {
-        StyleContext c = new StyleContext();
-
-        //default style
-        Style defaultStyle = c.addStyle(STYLE_DEFAULT, c.getStyle(StyleContext.DEFAULT_STYLE));
-
-        //comment style
-        Style commentStyle = c.addStyle(STYLE_COMMENT, defaultStyle);
-        StyleConstants.setForeground(commentStyle, Color.DARK_GRAY);
-        StyleConstants.setItalic(commentStyle, true);
-
-        //current line style
-        Style currentLineStyle = c.addStyle(STYLE_CURRENT_LINE, defaultStyle);
-        StyleConstants.setBackground(currentLineStyle, Color.getHSBColor((float) 50.0/360, (float) 0.5, (float) 1.0));
-
-        //linenr style
-        Style linenrStyle = c.addStyle(STYLE_LINENR, defaultStyle);
-        StyleConstants.setForeground(linenrStyle, Color.getHSBColor((float) 25.0 / 360, (float) 1, (float) 0.8));
-
-        return c;
-    }
 }

@@ -27,6 +27,7 @@ public class SettingsDialog extends JDialog {
     private JSpinner runWaitSpinner;
     private JRadioButton decimalRadioButton;
     private JRadioButton binaryRadioButton;
+    private JCheckBox upperCommandsCheck;
     private SpinnerNumberModel minValModel, maxValModel;
 
     private Result result = Result.NONE;
@@ -87,6 +88,12 @@ public class SettingsDialog extends JDialog {
                 maxValModel.setMinimum(min);
             }
         });
+        syntaxHighlightingCheck.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                upperCommandsCheck.setEnabled(syntaxHighlightingCheck.isSelected());
+            }
+        });
 
         load();
     }
@@ -111,6 +118,8 @@ public class SettingsDialog extends JDialog {
 
         lifeCompilationCheck.setSelected(prefs.getLifeCompileEnabled());
         syntaxHighlightingCheck.setSelected(prefs.getStyleCode());
+        upperCommandsCheck.setSelected(prefs.getUpperCommands());
+        upperCommandsCheck.setEnabled(syntaxHighlightingCheck.isSelected());
 
         runWaitSpinner.setModel(new SpinnerNumberModel((int) prefs.getRunWaittime(), 0, 5000, 1));
 
@@ -126,6 +135,7 @@ public class SettingsDialog extends JDialog {
         prefs.setRegisterMax((long)(double) maxValModel.getValue());
         prefs.setLifeCompileEnabled(lifeCompilationCheck.isSelected());
         prefs.setStyleCode(syntaxHighlightingCheck.isSelected());
+        prefs.setUpperCommands(upperCommandsCheck.isSelected());
         prefs.setRunWaittime((int) runWaitSpinner.getValue());
         prefs.setNumberRepresentation(binaryRadioButton.isSelected() ?
                 Prefs.NUMBERREPRSENTATION_BINARY : Prefs.NUMBERREPRSENTATION_DECIMAL);
