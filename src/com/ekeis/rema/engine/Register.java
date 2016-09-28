@@ -29,7 +29,7 @@ public class Register {
         return value;
     }
     public void setValue(long value) {
-        long oldVal = value;
+        long oldVal = this.value;
         boolean overflow = false;
         //OVERFLOWCHECK DISABLED!!!, if (value < min || value > max) overflow = true;
         if (overflow) {
