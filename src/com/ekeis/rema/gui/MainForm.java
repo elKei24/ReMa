@@ -54,12 +54,11 @@ public class MainForm implements Machine.MachineListener {
     private JFileChooser fileChooser;
 
     //own fields
-    private Machine machine;
+    private Machine machine = new Machine();
     private CompoundUndoManager undoManager;
     private LogTableModel logModel;
     private boolean compilationScheduled;
-    private int curLine = -1;
-    private boolean styleCode = Prefs.getInstance().getStyleCode();
+    private CodeDocument doc = new CodeDocument(resNoTranslation.getString("code.default"), Prefs.getInstance().getStyleCode());
 
     //----------
     // Actions
@@ -236,7 +235,6 @@ public class MainForm implements Machine.MachineListener {
 
     public MainForm() {
         //init machine
-        machine = new Machine();
         machine.addListener(this);
         machine.setNumRegisters(Prefs.getInstance().getNumberRegisters());
         registerOverview.setLayout(new WrapLayout(FlowLayout.LEFT));
@@ -253,7 +251,8 @@ public class MainForm implements Machine.MachineListener {
         buttonPause.setAction(actionMachinePause);
 
         //set up code area
-        if (styleCode) CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
+        codeArea.setDocument(doc);
+        doc.styleCode();
         codeArea.setComponentPopupMenu(createEditorPopup());
         codeArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -437,7 +436,7 @@ public class MainForm implements Machine.MachineListener {
                         break;
                 }
 
-                //add VIPs
+                //add VIRs - Very Important Registers ;)
                 registerOverviewVIP.add(new RegisterGui(machine.getAkku(), res.getString("overview.akku"), repr),
                         BorderLayout.WEST);
                 registerOverviewVIP.add(new RegisterGui(machine.getCounter(), res.getString("overview.ip"), repr),
@@ -469,12 +468,8 @@ public class MainForm implements Machine.MachineListener {
             reset();
             Prefs prefs = Prefs.getInstance();
             machine.setNumRegisters(prefs.getNumberRegisters());
-            styleCode = prefs.getStyleCode();
-            if (styleCode) {
-                CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
-            } else {
-                CodeHelper.styleCodeDefault(codeArea.getStyledDocument());
-            }
+            doc.setStyleCode(prefs.getStyleCode());
+            doc.styleCode();
         }
     }
 
@@ -543,15 +538,15 @@ public class MainForm implements Machine.MachineListener {
             }
         }
         if (sure) {
-            setCode(CodeHelper.updateLineNumbers(codeArea.getText()));
+            doc.updateLineNumbers();
         }
     }
 
     private void reset() {
-        curLine = -1;
         logModel.clear();
         machine.reset();
         machine.setProgram(codeArea.getText());
+        doc.setCurLine(-1);
     }
     private void pause() {
         machine.pause();
@@ -595,19 +590,6 @@ public class MainForm implements Machine.MachineListener {
 
     private void onCodeChange(final DocumentEvent e) {
         log.log(Level.FINER, "codeChange");
-
-        //style code
-        try {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    log.log(Level.FINER, "codeStyleRun");
-                    if (styleCode) CodeHelper.styleCodeAfterChange(e, curLine);
-                }
-            });
-        } catch (IllegalArgumentException iae) {
-            log.log(Level.WARNING, "Failed to style code", iae);
-        }
 
         //compile code
         final int DELAY = 1000;
@@ -677,13 +659,15 @@ public class MainForm implements Machine.MachineListener {
         machine.getCounter().addListener(new Register.RegisterListener() {
             @Override
             public void onValueSet(final RegisterValueSetEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        curLine = (int) e.getOldVal();
-                        if (styleCode) CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
-                    }
-                });
+                final int oldVal = (int) e.getOldVal();
+                if (oldVal != e.getNewVal()) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            doc.setCurLine(oldVal); //old: when stepping, you can see what the machine has just done
+                        }
+                    });
+                }
             }
         });
     }
@@ -693,7 +677,7 @@ public class MainForm implements Machine.MachineListener {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                if (styleCode) CodeHelper.styleCode(codeArea.getStyledDocument(), curLine);
+                doc.styleCode();
             }
         });
     }

@@ -9,21 +9,22 @@ import com.ekeis.rema.engine.exceptions.syntax.SyntaxException;
 import com.ekeis.rema.prefs.Prefs;
 import javafx.util.Pair;
 
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author Elias Keis (30.05.2016)
+ * @author Elias Keis (28.09.2016)
  */
-public class CodeHelper {
-    private static final Logger log = Logger.getLogger(CodeHelper.class.getName());
+public class CodeDocument extends DefaultStyledDocument {
+    private static final Logger log = Logger.getLogger(CodeDocument.class.getName());
 
     //styles
     private static final String STYLE_DEFAULT = "defaultStyle";
@@ -32,6 +33,7 @@ public class CodeHelper {
     private static final String STYLE_CURRENT_LINE = "currentLine";
     private static final String STYLE_COMMAND = "command";
     private static final StyleContext styleContext;
+
     static {
         StyleContext c = new StyleContext();
 
@@ -45,7 +47,7 @@ public class CodeHelper {
 
         //current line style
         Style currentLineStyle = c.addStyle(STYLE_CURRENT_LINE, defaultStyle);
-        StyleConstants.setBackground(currentLineStyle, Color.getHSBColor((float) 50.0/360, (float) 0.5, (float) 1.0));
+        StyleConstants.setBackground(currentLineStyle, Color.getHSBColor((float) 50.0 / 360, (float) 0.5, (float) 1.0));
 
         //linenr style
         Style linenrStyle = c.addStyle(STYLE_LINENR, defaultStyle);
@@ -57,13 +59,69 @@ public class CodeHelper {
         styleContext = c;
     }
 
-    public static String updateLineNumbers(String code) {
+    //non-static stuff
+    private int curLine = -1;
+    private boolean styleCode = true;
+    private DocumentListener onCodeChangeStyler = new DocumentListener() {
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            onCodeChange(e);
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            onCodeChange(e);
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            //should be working without calling onCodeChange() here
+        }
+
+        private void onCodeChange(DocumentEvent e) {
+            log.log(Level.FINER, "code style after code change");
+
+            if (e.getDocument() != CodeDocument.this) {
+                log.warning("Will not style document. The given event was not caused by this document!");
+                return;
+            }
+
+            final int start = e.getOffset();
+            final int end = e.getLength() + start;
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    styleCode(start, end);
+                }
+            });
+        }
+    };
+
+    public CodeDocument() {
+        super();
+        addDocumentListener(onCodeChangeStyler);
+    }
+
+    public CodeDocument(String text, boolean styleCode) {
+        super();
+        this.styleCode = styleCode;
+        try {
+            insertString(0, text, styleContext.getStyle(STYLE_DEFAULT));
+        } catch (BadLocationException e) {
+            log.throwing(CodeDocument.class.getName(), "CodeDocument(String)", e);
+        }
+        addDocumentListener(onCodeChangeStyler);
+    }
+
+    public void updateLineNumbers() {
+        String code = getText();
         int lineNr = 1;
-        List<String> lines = Arrays.asList(code.trim().split("\n"));
-        List<String> linesNew = new ArrayList<>(lines);
+        java.util.List<String> lines = Arrays.asList(code.trim().split("\n"));
+        java.util.List<String> linesNew = new ArrayList<>(lines);
 
         //go through the lines
-        forLine: for (int i = 0; i < lines.size(); i++) {
+        forLine:
+        for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
 
             //Zeile allgemein optimieren
@@ -88,32 +146,31 @@ public class CodeHelper {
         for (String line : linesNew) {
             codeNew += line + "\n";
         }
-        return codeNew.trim();
+
+        setText(codeNew.trim());
     }
 
-    public static void styleCodeDefault(StyledDocument document) {
-        document.setCharacterAttributes(0, document.getLength(), styleContext.getStyle(STYLE_DEFAULT), true);
+    public void styleCode() {
+        styleCode(0, CodeDocument.this.getLength() - 1);
     }
-    public static void styleCode(StyledDocument document, int currentLine) {
-        styleCode(document, 0, document.getLength() - 1, currentLine);
-    }
-    public static void styleCodeAfterChange(DocumentEvent e, int currentLine) throws IllegalArgumentException {
-        if (e.getDocument() == null || !(e.getDocument() instanceof StyledDocument)) {
-            throw new IllegalArgumentException("Document must be a StyledDocument");
+
+    protected void styleCode(int start, int end) {
+        if (styleCode) {
+            styleCodeFancy(start, end);
+        } else {
+            styleCodeDefault(start, end);
         }
-        StyledDocument doc = (StyledDocument) e.getDocument();
-
-        int start = e.getOffset();
-        int end = e.getLength() + start;
-
-        //stlye
-        styleCode(doc, start, end, currentLine);
     }
-    protected static void styleCode(StyledDocument doc, int start, int end, int currentLine) {
+
+    public void styleCodeDefault(int start, int end) {
+        setCharacterAttributes(start, end, styleContext.getStyle(STYLE_DEFAULT), true);
+    }
+
+    protected void styleCodeFancy(int start, int end) {
         if (start > end) return;
         String code;
         try {
-            code = doc.getText(0, doc.getLength());
+            code = getText(0, getLength());
         } catch (BadLocationException e) {
             log.log(Level.SEVERE, "Failed to format code, could not obtain whole text", e);
             return;
@@ -132,22 +189,23 @@ public class CodeHelper {
         }
         //start is inclusive, end not!
 
-        //stlye lines
+        //style lines
         int lineStart = start;
         while (lineStart < end) {
             int lineEnd = code.indexOf('\n', lineStart + 1);
             if (lineEnd > end || lineEnd < 0) lineEnd = end;
 
-            styleCodeLine(doc, lineStart, lineEnd, currentLine);
+            styleCodeLine(lineStart, lineEnd);
 
             lineStart = lineEnd;
             while (lineStart < end && code.charAt(lineStart) == '\n') lineStart++;
         }
     }
-    protected static void styleCodeLine(StyledDocument doc, int startLine, int endLine, int currentLine) {
+
+    private void styleCodeLine(int startLine, int endLine) {
         String code;
         try {
-            code = doc.getText(0, doc.getLength());
+            code = getText(0, getLength());
         } catch (BadLocationException e) {
             log.log(Level.SEVERE, "Failed to format code, could not obtain whole text", e);
             return;
@@ -156,17 +214,17 @@ public class CodeHelper {
         String line = code.substring(startLine, endLine);
 
         //reset style for whole line
-        doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_DEFAULT), true);
+        setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_DEFAULT), true);
 
         //style parts
         if (Program.isCommentLine(line)) {
             //comment styling
-            doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_COMMENT), false);
+            setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_COMMENT), false);
         } else {
             //again comment styling
             int commentStart = Program.findCommentStart(line);
             if (commentStart >= 0) {
-                doc.setCharacterAttributes(startLine + commentStart, endLine - startLine - commentStart,
+                setCharacterAttributes(startLine + commentStart, endLine - startLine - commentStart,
                         styleContext.getStyle(STYLE_COMMENT), false);
             }
 
@@ -181,11 +239,11 @@ public class CodeHelper {
             if (lineNr > 0) {
                 //lineNr itsself
                 lineNrPos = line.indexOf(':');
-                doc.setCharacterAttributes(startLine, lineNrPos + 1, styleContext.getStyle(STYLE_LINENR), false);
+                setCharacterAttributes(startLine, lineNrPos + 1, styleContext.getStyle(STYLE_LINENR), false);
 
                 //current line
-                if (lineNr == currentLine) {
-                    doc.setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_CURRENT_LINE), false);
+                if (lineNr == curLine) {
+                    setCharacterAttributes(startLine, endLine - startLine, styleContext.getStyle(STYLE_CURRENT_LINE), false);
                 }
             }
 
@@ -194,7 +252,8 @@ public class CodeHelper {
             {
                 //find beginning
                 int commandPos = startLine + (lineNrPos < 0 ? 0 : lineNrPos + 1);
-                while (commandPos < endLine && code.charAt(commandPos) == ' ') commandPos++; //ignore space in front of command
+                while (commandPos < endLine && code.charAt(commandPos) == ' ')
+                    commandPos++; //ignore space in front of command
                 if (commandPos >= endLine) break commandStyling; //cancel if there is no command
 
                 //find end
@@ -203,16 +262,16 @@ public class CodeHelper {
 
                 //do styling
                 if (commandPos >= 0 && commandPos < endLine && commandEnd > commandPos) {
-                    doc.setCharacterAttributes(commandPos, commandEnd - commandPos, styleContext.getStyle(STYLE_COMMAND), false);
+                    setCharacterAttributes(commandPos, commandEnd - commandPos, styleContext.getStyle(STYLE_COMMAND), false);
                     if (Prefs.getInstance().getUpperCommands()) {
                         String command = code.substring(commandPos, commandEnd);
                         String commandUpper = command.toUpperCase(Locale.ROOT);
                         if (!command.equals(commandUpper)) {
                             try {
-                                doc.remove(commandPos, commandEnd - commandPos);
-                                doc.insertString(commandPos, commandUpper, styleContext.getStyle(STYLE_COMMAND));
+                                remove(commandPos, commandEnd - commandPos);
+                                insertString(commandPos, commandUpper, styleContext.getStyle(STYLE_COMMAND));
                             } catch (BadLocationException e) {
-                                log.throwing(CodeHelper.class.getName(), "styleCodeLine()", e);
+                                log.throwing(CodeDocument.class.getName(), "styleCodeLine()", e);
                             }
                         }
                     }
@@ -221,4 +280,47 @@ public class CodeHelper {
         }
     }
 
+    public int getCurLine() {
+        return curLine;
+    }
+
+    public void setCurLine(int curLine) {
+        if (this.curLine != curLine) {
+            this.curLine = curLine;
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    styleCode();
+                }
+            });
+        }
+    }
+
+    public boolean isStyleCode() {
+        return styleCode;
+    }
+
+    public void setStyleCode(boolean styleCode) {
+        if (this.styleCode != styleCode) {
+            this.styleCode = styleCode;
+            styleCode();
+        }
+    }
+
+    public String getText() {
+        try {
+            return getText(0, getLength() - 1);
+        } catch (BadLocationException ble) {
+            throw new AssertionError("Should be no problem to fetch whole text of document", ble);
+        }
+    }
+    public void setText(String text) {
+        try {
+            remove(0, getLength());
+            insertString(0, text, styleContext.getStyle(STYLE_DEFAULT));
+        } catch (BadLocationException ble) {
+            throw new AssertionError("Should be no problem to change whole text", ble);
+        }
+        styleCode();
+    }
 }
