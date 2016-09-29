@@ -14,9 +14,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Locale;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -86,6 +85,8 @@ public class CodeDocument extends DefaultStyledDocument {
                 return;
             }
 
+            if (!styleCode) return;
+
             final int start = e.getOffset();
             final int end = e.getLength() + start;
             SwingUtilities.invokeLater(new Runnable() {
@@ -96,11 +97,6 @@ public class CodeDocument extends DefaultStyledDocument {
             });
         }
     };
-
-    public CodeDocument() {
-        super();
-        addDocumentListener(onCodeChangeStyler);
-    }
 
     public CodeDocument(String text, boolean styleCode) {
         super();
@@ -114,6 +110,8 @@ public class CodeDocument extends DefaultStyledDocument {
     }
 
     public void updateLineNumbers() {
+        recommendCombineEverything(true);
+
         String code = getText();
         int lineNr = 1;
         java.util.List<String> lines = Arrays.asList(code.trim().split("\n"));
@@ -148,6 +146,7 @@ public class CodeDocument extends DefaultStyledDocument {
         }
 
         setText(codeNew.trim());
+        recommendCombineEverything(false);
     }
 
     public void styleCode() {
@@ -163,10 +162,14 @@ public class CodeDocument extends DefaultStyledDocument {
     }
 
     public void styleCodeDefault(int start, int end) {
+        recommendIgnoreChanges(true);
         setCharacterAttributes(start, end, styleContext.getStyle(STYLE_DEFAULT), true);
+        recommendIgnoreChanges(false);
     }
 
     protected void styleCodeFancy(int start, int end) {
+        recommendIgnoreChanges(true);
+
         if (start > end) return;
         String code;
         try {
@@ -200,6 +203,8 @@ public class CodeDocument extends DefaultStyledDocument {
             lineStart = lineEnd;
             while (lineStart < end && code.charAt(lineStart) == '\n') lineStart++;
         }
+
+        recommendIgnoreChanges(false);
     }
 
     private void styleCodeLine(int startLine, int endLine) {
@@ -309,18 +314,45 @@ public class CodeDocument extends DefaultStyledDocument {
 
     public String getText() {
         try {
-            return getText(0, getLength() - 1);
+            return getText(0, getLength());
         } catch (BadLocationException ble) {
             throw new AssertionError("Should be no problem to fetch whole text of document", ble);
         }
     }
     public void setText(String text) {
+        recommendCombineEverything(true);
         try {
             remove(0, getLength());
             insertString(0, text, styleContext.getStyle(STYLE_DEFAULT));
         } catch (BadLocationException ble) {
             throw new AssertionError("Should be no problem to change whole text", ble);
+        } finally {
+            recommendCombineEverything(false);
+            styleCode();
         }
-        styleCode();
+    }
+
+    //HANDLER STUFF
+    public interface UndoRecommendationListener {
+        void combineEverythingRecommendation(boolean combineEverything);
+        void ignoreChangesRecommendation(boolean ignoreChanges);
+    }
+    private List<UndoRecommendationListener> recListeners = new LinkedList<UndoRecommendationListener>();
+    public void addUndoRecommendationListener(UndoRecommendationListener listener) {
+        recListeners.add(listener);
+    }
+    public void removeUndoRecommendationListener(UndoRecommendationListener listener) {
+        recListeners.remove(listener);
+    }
+    private void recommendCombineEverything(boolean combineEverything) {
+        for (UndoRecommendationListener l : recListeners) {
+            l.combineEverythingRecommendation(combineEverything);
+        }
+    }
+
+    private void recommendIgnoreChanges(boolean ignoreChanges) {
+        for (UndoRecommendationListener l : recListeners) {
+            l.ignoreChangesRecommendation(ignoreChanges);
+        }
     }
 }

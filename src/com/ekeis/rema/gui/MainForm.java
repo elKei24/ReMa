@@ -290,6 +290,21 @@ public class MainForm implements Machine.MachineListener {
                 checkUndoEnabled();
             }
         });
+        doc.addUndoRecommendationListener(new CodeDocument.UndoRecommendationListener() {
+            @Override
+            public void combineEverythingRecommendation(boolean combineEverything) {
+                undoManager.setCombineEverything(combineEverything);
+            }
+
+            @Override
+            public void ignoreChangesRecommendation(boolean ignoreChanges) {
+                undoManager.setIgnoreChanges(ignoreChanges);
+            }
+        });
+
+        //set up Undo/Redo-Names
+        actionCodeRedo.putValue(Action.NAME, undoManager.getRedoPresentationName());
+        actionCodeUndo.putValue(Action.NAME, undoManager.getUndoPresentationName());
 
         //reset machine
         reset();
@@ -575,13 +590,13 @@ public class MainForm implements Machine.MachineListener {
 
     private void checkUndoEnabled() {
         actionCodeRedo.setEnabled(undoManager.canRedo());
+        actionCodeRedo.putValue(Action.NAME, undoManager.getRedoPresentationName());
         actionCodeUndo.setEnabled(undoManager.canUndo());
+        actionCodeUndo.putValue(Action.NAME, undoManager.getUndoPresentationName());
     }
 
     private void setCode(String txt) {
-        undoManager.setCombineEverything(true);
-        codeArea.setText(txt);
-        undoManager.setCombineEverything(false);
+        doc.setText(txt);
     }
 
     //-------------------
@@ -664,7 +679,7 @@ public class MainForm implements Machine.MachineListener {
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            doc.setCurLine(oldVal); //old: when stepping, you can see what the machine has just done
+                            doc.setCurLine(oldVal); //old so that when stepping you can see what the machine has just done
                         }
                     });
                 }
