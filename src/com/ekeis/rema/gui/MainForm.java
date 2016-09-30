@@ -58,7 +58,7 @@ public class MainForm implements Machine.MachineListener {
     private CompoundUndoManager undoManager;
     private LogTableModel logModel;
     private boolean compilationScheduled;
-    private CodeDocument doc = new CodeDocument(resNoTranslation.getString("code.default"), Prefs.getInstance().getStyleCode());
+    private CodeDocument doc = new CodeDocument(codeArea, resNoTranslation.getString("code.default"), Prefs.getInstance().getStyleCode());
 
     //----------
     // Actions

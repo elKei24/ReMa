@@ -59,6 +59,7 @@ public class CodeDocument extends DefaultStyledDocument {
     }
 
     //non-static stuff
+    private JTextComponent textComponent;
     private int curLine = -1;
     private boolean styleCode = true;
     private DocumentListener onCodeChangeStyler = new DocumentListener() {
@@ -98,8 +99,9 @@ public class CodeDocument extends DefaultStyledDocument {
         }
     };
 
-    public CodeDocument(String text, boolean styleCode) {
+    public CodeDocument(JTextComponent component, String text, boolean styleCode) {
         super();
+        this.textComponent = component;
         this.styleCode = styleCode;
         try {
             insertString(0, text, styleContext.getStyle(STYLE_DEFAULT));
@@ -273,8 +275,10 @@ public class CodeDocument extends DefaultStyledDocument {
                         String commandUpper = command.toUpperCase(Locale.ROOT);
                         if (!command.equals(commandUpper)) {
                             try {
+                                int caretPos = textComponent.getCaret().getDot();
                                 remove(commandPos, commandEnd - commandPos);
                                 insertString(commandPos, commandUpper, styleContext.getStyle(STYLE_COMMAND));
+                                textComponent.getCaret().setDot(Math.min(caretPos, getLength()));
                             } catch (BadLocationException e) {
                                 log.throwing(CodeDocument.class.getName(), "styleCodeLine()", e);
                             }
@@ -321,9 +325,11 @@ public class CodeDocument extends DefaultStyledDocument {
     }
     public void setText(String text) {
         recommendCombineEverything(true);
+        int caretPos = textComponent.getCaret().getDot();
         try {
             remove(0, getLength());
             insertString(0, text, styleContext.getStyle(STYLE_DEFAULT));
+            textComponent.getCaret().setDot(Math.min(caretPos, text.length()));
         } catch (BadLocationException ble) {
             throw new AssertionError("Should be no problem to change whole text", ble);
         } finally {
