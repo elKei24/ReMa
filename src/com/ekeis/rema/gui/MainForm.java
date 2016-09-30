@@ -70,7 +70,11 @@ public class MainForm implements Machine.MachineListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             actionFileSave.setEnabled(false);
+            undoManager.forceNewCompoundEdit();
+            undoManager.setCombineEverything(true);
             setCode(resNoTranslation.getString("code.default"));
+            undoManager.setCombineEverything(false);
+            undoManager.forceNewCompoundEdit();
         }
     };
     private final AbstractAction actionFileLoad = new GuiAction(res.getString("menu.file.load"),
@@ -553,7 +557,9 @@ public class MainForm implements Machine.MachineListener {
             }
         }
         if (sure) {
+            undoManager.forceNewCompoundEdit();
             doc.updateLineNumbers();
+            undoManager.forceNewCompoundEdit();
         }
     }
 
@@ -589,10 +595,17 @@ public class MainForm implements Machine.MachineListener {
     //----------
 
     private void checkUndoEnabled() {
-        actionCodeRedo.setEnabled(undoManager.canRedo());
-        actionCodeRedo.putValue(Action.NAME, undoManager.getRedoPresentationName());
-        actionCodeUndo.setEnabled(undoManager.canUndo());
-        actionCodeUndo.putValue(Action.NAME, undoManager.getUndoPresentationName());
+        boolean canRedo = undoManager.canRedo();
+        actionCodeRedo.setEnabled(canRedo);
+        String redoPresName = undoManager.getRedoPresentationName();
+        actionCodeRedo.putValue(Action.NAME, redoPresName);
+
+        boolean canUndo = undoManager.canUndo();
+        actionCodeUndo.setEnabled(canUndo);
+        String undoPresName = undoManager.getUndoPresentationName();
+        actionCodeUndo.putValue(Action.NAME, undoPresName);
+
+        log.finer(String.format("CanRedo: %b CanUndo: %b Redo: \"%s\" Undo: \"%s\"", canRedo, canUndo, redoPresName, undoPresName));
     }
 
     private void setCode(String txt) {
