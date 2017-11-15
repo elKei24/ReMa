@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ * Copyright (c) 2017 by Elias Keis. All rights reserved.
  */
 
 package com.ekeis.rema.gui;
 
+import com.ekeis.rema.engine.Pair;
 import com.ekeis.rema.engine.Program;
 import com.ekeis.rema.engine.exceptions.syntax.SyntaxException;
 import com.ekeis.rema.prefs.Prefs;
-import javafx.util.Pair;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

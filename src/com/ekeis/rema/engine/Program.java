@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 by Elias Keis. All rights reserved.
+ * Copyright (c) 2017 by Elias Keis. All rights reserved.
  */
 
 package com.ekeis.rema.engine;
@@ -9,7 +9,6 @@ import com.ekeis.rema.engine.exceptions.InternalException;
 import com.ekeis.rema.engine.exceptions.RemaException;
 import com.ekeis.rema.engine.exceptions.runtime.LineNotFoundException;
 import com.ekeis.rema.engine.exceptions.syntax.*;
-import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
